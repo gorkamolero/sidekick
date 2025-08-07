@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { useStore } from '../lib/store';
-import { KimiK2Provider } from '../lib/api/providers';
+import { MusicGenProvider } from '../lib/api/providers';
 
 export function useAudioGeneration() {
   const { addGeneration, currentProject } = useStore();
-  const provider = new KimiK2Provider();
+  const provider = new MusicGenProvider();
 
   return useMutation({
     mutationFn: async (prompt: string) => {

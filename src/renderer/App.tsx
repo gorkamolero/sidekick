@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GenerationPanel } from './components/GenerationPanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { useStore } from './lib/store';
+import { Archive } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
 export function App() {
   const { setProject } = useStore();
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     // Get project info on startup
@@ -16,14 +18,71 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="h-screen flex flex-col bg-[var(--color-ableton-dark)]">
-        <header className="bg-black/50 p-4 border-b border-gray-800">
-          <h1 className="text-lg font-semibold">Sidekick</h1>
-          <p className="text-xs text-gray-400">AI Loops for Ableton Live</p>
-        </header>
+      <div className="h-screen flex flex-col bg-[var(--color-void)] relative overflow-hidden">
+        {/* Scanner effect */}
+        <div className="scanner" />
         
-        <GenerationPanel />
-        <HistoryPanel />
+        {/* Grid pattern background */}
+        <div className="absolute inset-0 grid-pattern opacity-50" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col h-full">
+          <header className="border-b border-[var(--color-text-dim)] p-3 flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-bold duochrome tracking-wider">SIDEKICK</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" />
+                <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest">
+                  Neural Audio Synthesis
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setShowHistory(!showHistory)}
+                className={`p-2 rounded transition-all duration-200 ${
+                  showHistory 
+                    ? 'bg-[var(--color-accent)] text-black' 
+                    : 'hover:bg-[var(--color-surface)] text-[var(--color-text-secondary)]'
+                }`}
+              >
+                <Archive className="w-4 h-4" />
+              </button>
+            </div>
+          </header>
+          
+          {/* Main content area */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Chat/Main area */}
+            <div className="flex-1 flex flex-col">
+              {/* Chat messages will go here */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="text-center py-16">
+                  <div className="text-[var(--color-text-dim)] text-sm font-mono">
+                    <p>// READY FOR NEURAL SYNTHESIS</p>
+                    <p className="mt-2 text-xs">TYPE YOUR COMMAND BELOW</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Generation panel at bottom */}
+              <GenerationPanel />
+            </div>
+            
+            {/* History sidebar */}
+            {showHistory && (
+              <div className="w-80 border-l border-[var(--color-text-dim)] bg-[var(--color-surface)]/50">
+                <HistoryPanel />
+              </div>
+            )}
+          </div>
+          
+          {/* Status bar */}
+          <footer className="border-t border-[var(--color-text-dim)] px-4 py-2 flex items-center justify-between text-xs text-[var(--color-text-dim)]">
+            <span>STATUS: OPERATIONAL</span>
+            <span className="tabular-nums">{new Date().toISOString().slice(0, 19).replace('T', ' ')}</span>
+          </footer>
+        </div>
       </div>
     </QueryClientProvider>
   );
