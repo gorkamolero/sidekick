@@ -64,20 +64,35 @@ app.on('activate', () => {
 import './ipc';
 import './mastra';
 
-// Handle native file drag for external applications
+// Handle native file drag for external applications (DAW drag and drop)
 ipcMain.on('ondragstart', (event, filePath: string) => {
   console.log('🎵 Native drag started for file:', filePath);
   
-  // Create a proper icon for macOS (required - cannot be empty!)
-  // Create a small 16x16 music note icon
+  // Ensure we have an absolute path
+  const absolutePath = path.isAbsolute(filePath) 
+    ? filePath 
+    : path.resolve(filePath);
+  
+  // Verify file exists
+  if (!require('fs').existsSync(absolutePath)) {
+    console.error('❌ File not found for drag:', absolutePath);
+    return;
+  }
+  
+  // Create a proper audio drag icon (32x32 recommended for better visibility)
+  // This is a base64-encoded PNG of a music note icon
   const iconBuffer = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAEZSURBVDiNpZOxSgNBEIa/2T07OZPcJWihjaWFlvoEPoBgY2Ej2FkJ2vgCPoGlrY2djYWlhYWIlSAIFsYgaDiTXHJ7O2thOHPJBRz4YZiZ/b6Z3ZlV/BN5lfqCpsM8MAcMAiVAAHvAGrBkjNkr5F+VAQDXB0aB98/hAfAI7BpjLooxFADUAPr6QE3k4+oCk4BzzrlJYOKrgKoOpKqj7WzU9zUA13XH2tk4HYjHXwXaRj4H7LcFVPVEVZdVdTyELqrqiqpeZMD9OKzGsiwBnuM4N57nHTvn3hNgHnhJ/CKw8R1g0xjzBFR838+FEAghqDdbrYdhGC00m83bdiAAy4SQDyE5BVaBlwLoAw6BKWA6+XpkQJJL/r3/iE9Yum6c9fMQiAAAAABJRU5ErkJggg==',
+    'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAKFSURBVFiFtZexaxRBFMa/N7O7d3t7l1wSL4mJRhEVRBsrC0EQLCwsxEIQBEHBykL/AEEsBAsLC0EsBBtBsBDEQhAsBLEQFAQVRUUxEiV6Se7udmfnzXtbiHu3c7cXQ+KDYXZ25vt+M2/evBkiIvxPGUutBIA9ALYDWAdgFYAygByADwDeAHgI4DaAm0T0o5UBa60FgGEAxwEcBFBqsXkOwGUAF4loIrmhKQBr7V4AFwBs+4P+5gCcJqKrC9akrrPWngJwGkC23Q4TZADglLX2dNIRAGCttUcAnEGL4BG5iTAF40dTCFOYgvHHkW3OOOdOABj+BcBasx/ABQCZuZLrbuC9h/feRfsJIfRc1zVa64WGAaC01jkA5wCMJQEOArjo0AK0dNGOWmsOAhARI2NHrLXnWvnQ58gN4P6vnt4qEZEQgrfU7JYxZhEAAGCtXQXgOYCV7aQqJJcwcOUCqq/u/wncwKbt2Pbofsr5LADnm+vWmv0Axn9FfvfyLayfO9Y1efPr1cJfAeBBFHUHQkgCMAwgGx8vfHzDlv2jGFg3hEGVQ7ZnObKqgIzMQAoBIQWYCR6BhIBDgK8/4YIaaoeG8eV1NJJdGKP9AE52O6uhmV0UrKhC+jUIgCLylCTvTYFCAOhJ/pzZRcFOQGjON9YvBGBdS+OuSaYRAHpdCUkATXr/LHQnzaBzJQxgGsAgOtdgM/kfaBJAo6SN0ARwhYguRXcVvD2AG9G9XaIzpwsB6Fw7ANzshgAAiGg8nHOzTsBvJnYVx0grbcOx1OoAgCfR/0gA57EY+B0S8LQqy+X+hLEsLQFYH00kPzrQxBMA94jobP3v8F0AIiJGNOsuRGu0VrJaaxezRHQG/1k/AcBTFMUBquHeAAAAAElFTkSuQmCC',
     'base64'
   );
   const icon = nativeImage.createFromBuffer(iconBuffer);
   
+  // Start the native drag operation
+  // This enables dragging to external applications like Ableton Live
   event.sender.startDrag({
-    file: filePath,
-    icon: icon
+    file: absolutePath,
+    icon: icon.resize({ width: 32, height: 32 }) // Ensure proper size
   });
+  
+  console.log('✅ Native drag initiated for:', absolutePath);
 });
