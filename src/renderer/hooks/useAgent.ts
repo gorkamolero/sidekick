@@ -49,9 +49,9 @@ export function useAgent() {
     addMessage(assistantMessage);
 
     try {
-      // Build conversation history including the new message
+      // Build conversation history WITHOUT the empty assistant message we just added
       const previousMessages = currentConversation?.messages
-        .filter(m => m.role !== 'system')
+        .filter(m => m.role !== 'system' && m.id !== assistantMessage.id) // Exclude the empty assistant message
         .map(m => ({ role: m.role, content: m.content })) || [];
       
       // Add the new user message
