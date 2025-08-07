@@ -25,7 +25,6 @@ interface MusicGenInput {
   top_p?: number;
   classifier_free_guidance?: number;
   output_format?: 'wav' | 'mp3';
-  multi_band_diffusion?: boolean;
   normalization_strategy?: 'loudness' | 'clip' | 'peak' | 'rms';
   seed?: number;
   input_audio?: string; // For melody continuation
@@ -68,7 +67,6 @@ export class MusicGenProvider {
         top_k: 250,
         classifier_free_guidance: 3,
         output_format: 'wav',
-        multi_band_diffusion: true, // Enable for better audio quality
         ...(params.inputAudio && { input_audio: params.inputAudio })
       });
 

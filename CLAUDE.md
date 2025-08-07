@@ -3,6 +3,11 @@
 ## Project Overview
 Building an Electron app that sits beside Ableton Live, generates AI music loops, and allows drag-and-drop into DAW tracks.
 
+## Linear Project Information
+- **Team**: GorkaMolero (ID: 26ed7749-d07f-4aa0-aff1-be669067d430)
+- **Project**: Sidekick (ID: 767c232e-198b-4425-82ab-9cc47218c459)
+- **Active Issues**: Track progress at https://linear.app/gorkamolero/
+
 ## Current Status (Phase 1 ✓ Complete)
 - ✅ Electron + Vite + TypeScript setup complete
 - ✅ React integration configured

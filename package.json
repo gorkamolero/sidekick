@@ -9,7 +9,10 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
+    "lint": "eslint --ext .ts,.tsx .",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "keywords": [],
   "author": {
@@ -28,19 +31,23 @@
     "@electron-forge/plugin-vite": "^7.8.3",
     "@electron/fuses": "^1.8.0",
     "@tailwindcss/postcss": "^4.1.11",
+    "@testing-library/react": "^16.3.0",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/wavesurfer.js": "^6.0.12",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.21",
     "electron": "37.2.6",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
+    "happy-dom": "^18.0.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "typescript": "~4.5.4",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.2",

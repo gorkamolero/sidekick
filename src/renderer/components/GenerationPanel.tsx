@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../lib/store';
-import { Terminal, Cpu, X, Music } from 'lucide-react';
+import { Terminal, Cpu, X, Music, Repeat, Zap, Lightbulb } from 'lucide-react';
 import { useAgent } from '../hooks/useAgent';
 import { AudioDropZone } from './AudioDropZone';
 import { analyzeAudioFile } from '../services/audioAnalysisService';
 
+type GenerationMode = 'loop' | 'sample' | 'inspiration';
+
 export function GenerationPanel() {
   const [prompt, setPrompt] = useState('');
+  const [mode, setMode] = useState<GenerationMode>('loop');
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [showAudioDrop, setShowAudioDrop] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -25,11 +28,20 @@ export function GenerationPanel() {
     const message = prompt.trim();
     if (!message || isProcessing) return;
     
+    // Add mode context to the message
+    const modeContext = {
+      loop: '[LOOP MODE: Generate a 4-8 second seamless loop] ',
+      sample: '[SAMPLE MODE: Generate a 1 second one-shot/hit/sample] ',
+      inspiration: '[INSPIRATION MODE: Generate a 15-30 second musical idea] '
+    };
+    
+    const enhancedMessage = modeContext[mode] + message;
+    
     // Clear input immediately for better UX
     setPrompt('');
     
     // Send message asynchronously
-    await sendMessage(message);
+    await sendMessage(enhancedMessage);
     
     // Re-focus after sending
     setTimeout(() => textareaRef.current?.focus(), 100);
