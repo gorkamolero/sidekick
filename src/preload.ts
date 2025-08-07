@@ -42,4 +42,20 @@ contextBridge.exposeInMainWorld('electron', {
       return () => ipcRenderer.removeListener('audio:generated', callback);
     },
   },
+  
+  // IPC renderer for general communication
+  ipcRenderer: {
+    on: (channel: string, callback: (event: any, ...args: any[]) => void) => {
+      ipcRenderer.on(channel, callback);
+    },
+    once: (channel: string, callback: (event: any, ...args: any[]) => void) => {
+      ipcRenderer.once(channel, callback);
+    },
+    send: (channel: string, ...args: any[]) => {
+      ipcRenderer.send(channel, ...args);
+    },
+    removeListener: (channel: string, callback: (event: any, ...args: any[]) => void) => {
+      ipcRenderer.removeListener(channel, callback);
+    },
+  },
 });

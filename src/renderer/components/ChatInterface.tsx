@@ -4,6 +4,7 @@ import { ChatMessage } from '../types';
 import { Bot, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AudioPlayer } from './AudioPlayer';
+import { AudioAnalysisDisplay } from './AudioAnalysisDisplay';
 
 export function ChatInterface() {
   const { currentConversation } = useStore();
@@ -104,6 +105,14 @@ function MessageItem({ message }: { message: ChatMessage }) {
                         </div>
                       </div>
                     )
+                  ) : tool.toolName === 'analyze-audio' && tool.status === 'complete' && tool.result ? (
+                    <AudioAnalysisDisplay
+                      analysis={tool.result}
+                      onUseInGeneration={(analysis) => {
+                        // You can implement this to auto-fill generation params
+                        console.log('Use analysis for generation:', analysis);
+                      }}
+                    />
                   ) : (
                     <div className="text-xs text-[var(--color-accent)] font-mono bg-[var(--color-void)] p-2 rounded">
                       🔧 {tool.toolName || tool.name} {tool.status || 'executing...'}

@@ -55,3 +55,6 @@ sidekick/
 - WaveSurfer.js for audio visualization
 - Zustand for state management
 - React Query for API calls
+
+## Important Development Guidelines
+- **Tools should be in separate files**: Never put tool implementations in the same file as the agent. Each tool should have its own dedicated file for better organization and maintainability.

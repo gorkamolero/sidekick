@@ -6,6 +6,7 @@ import * as dotenv from 'dotenv';
 import { MusicGenProvider } from './services/musicgen';
 import { AudioService } from './services/audio';
 import { SIDEKICK_SYSTEM_PROMPT } from '../shared/prompts';
+import { analyzeAudio } from './tools/analyzeAudio';
 
 // Load environment variables
 dotenv.config();
@@ -99,6 +100,7 @@ const agent = new Agent({
   instructions: SIDEKICK_SYSTEM_PROMPT,
   tools: {
     generateMusic,
+    analyzeAudio,
     getProjectInfo,
   },
 });
@@ -111,8 +113,14 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
     // Use the Mastra agent's stream method
     const result = await agent.stream(messages);
     
+    console.log('📡 Stream started, waiting for parts...');
+    let partCount = 0;
+    
     // Stream all parts including tool calls and results
     for await (const part of result.fullStream) {
+      partCount++;
+      console.log(`📦 Part ${partCount}:`, part.type, part);
+      
       if (part.type === 'text-delta') {
         event.sender.send('agent:streamChunk', { 
           type: 'text', 

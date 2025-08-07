@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../lib/store';
-import { Terminal, Cpu, X } from 'lucide-react';
+import { Terminal, Cpu, X, Music } from 'lucide-react';
 import { useAgent } from '../hooks/useAgent';
+import { AudioDropZone } from './AudioDropZone';
+import { analyzeAudioFile } from '../services/audioAnalysisService';
 
 export function GenerationPanel() {
   const [prompt, setPrompt] = useState('');
   const [isEditingProject, setIsEditingProject] = useState(false);
+  const [showAudioDrop, setShowAudioDrop] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { currentProject, updateProject } = useStore();
   const { sendMessage, isProcessing, cancelMessage } = useAgent();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -35,6 +39,47 @@ export function GenerationPanel() {
     }
   };
 
+  const handleAudioFile = async (file: File) => {
+    setIsAnalyzing(true);
+    try {
+      // Analyze locally first for immediate feedback
+      const analysis = await analyzeAudioFile(file);
+      
+      // Format the analysis results as a message
+      const analyzePrompt = `I've analyzed the audio file "${file.name}":
+      
+🎵 BPM: ${Math.round(analysis.bpm)}
+🎹 Key: ${analysis.key}
+⚡ Energy: ${Math.round(analysis.energy * 100)}%
+🕺 Danceability: ${Math.round(analysis.danceability * 100)}%
+🎼 Style: ${analysis.style.join(', ')}
+🎤 Instruments: ${analysis.instruments.map(i => i.label).join(', ')}
+
+Would you like me to generate a complementary loop based on these characteristics?`;
+      
+      // Send the analysis results to the chat
+      await sendMessage(analyzePrompt);
+      
+      // Update project context if needed
+      if (currentProject) {
+        updateProject({ 
+          bpm: Math.round(analysis.bpm),
+          key: analysis.key 
+        });
+      }
+      
+      setShowAudioDrop(false);
+    } catch (error) {
+      console.error('Failed to process audio file:', error);
+      // Fallback: just inform about the upload
+      const fallbackPrompt = `I've received the audio file "${file.name}" but couldn't analyze it locally. The file has been uploaded for processing.`;
+      await sendMessage(fallbackPrompt);
+      setShowAudioDrop(false);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <div className="border-b border-[var(--color-text-dim)]">
       <div className="p-4">
@@ -45,10 +90,28 @@ export function GenerationPanel() {
               COMMAND INPUT
             </label>
           </div>
-          <div className="text-xs text-[var(--color-text-dim)] font-mono">
-            {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAudioDrop(!showAudioDrop)}
+              className="p-1.5 rounded hover:bg-[var(--color-surface)] transition-colors"
+              title="Analyze audio file"
+            >
+              <Music className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]" />
+            </button>
+            <div className="text-xs text-[var(--color-text-dim)] font-mono">
+              {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
+            </div>
           </div>
         </div>
+        
+        {showAudioDrop && (
+          <div className="mb-3">
+            <AudioDropZone 
+              onFileSelect={handleAudioFile}
+              isAnalyzing={isAnalyzing}
+            />
+          </div>
+        )}
         
         <div className="relative">
           <span className="absolute left-3 top-3 text-[var(--color-text-dim)] pointer-events-none">
