@@ -99,7 +99,7 @@ Would you like me to generate a complementary loop based on these characteristic
               <Music className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]" />
             </button>
             <div className="text-xs text-[var(--color-text-dim)] font-mono">
-              {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
+              Enter to send • Shift+Enter for new line
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@ Would you like me to generate a complementary loop based on these characteristic
                      transition-colors"
             disabled={isProcessing || localProcessing}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSubmit();
               }
