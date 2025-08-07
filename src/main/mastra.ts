@@ -27,16 +27,18 @@ const generateMusic = createTool({
   inputSchema: z.object({
     prompt: z.string().describe('A detailed, MusicGen-optimized prompt that includes BPM, key, and musical descriptions'),
     duration: z.number().default(8).describe('Duration in seconds (8 is optimal for loops, max 30)'),
+    model: z.enum(['stereo-large', 'stereo-melody-large']).describe('Model to use: stereo-large for drums/bass/textures, stereo-melody-large for melodies/leads/harmonic content'),
+    inputAudio: z.string().optional().describe('Optional: URL or path to audio file for melody continuation'),
   }),
   execute: async ({ context }) => {
-    const { prompt, duration = 8 } = context;
+    const { prompt, duration = 8, model, inputAudio } = context;
     console.log('🎵 MUSICGEN TOOL EXECUTING!!!');
     console.log('Parameters:', { prompt, duration });
     
     try {
-      console.log('🎵 Starting MusicGen API call...');
+      console.log('🎵 Starting MusicGen API call with model:', model);
       const musicGenProvider = new MusicGenProvider();
-      const result = await musicGenProvider.generate(prompt, { duration });
+      const result = await musicGenProvider.generate(prompt, { duration, model, inputAudio });
       
       console.log('🎵 MusicGen SUCCESS!');
       console.log('Audio URL:', result.audioUrl);

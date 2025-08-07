@@ -23,8 +23,8 @@ export function HistoryPanel() {
   });
 
   return (
-    <div className="flex-1 overflow-y-auto min-h-0">
-      <div className="p-4">
+    <div className="flex-1 overflow-y-auto min-h-0 bg-[var(--color-void)]">
+      <div className="p-6 max-w-5xl mx-auto">
         {/* Header with toggle */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">

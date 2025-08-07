@@ -4,6 +4,8 @@ interface GenerationParams {
   bpm?: number;
   key?: string;
   duration?: number;
+  model?: 'stereo-large' | 'stereo-melody-large';
+  inputAudio?: string;
 }
 
 interface GenerationResult {
@@ -17,7 +19,7 @@ const MUSICGEN_VERSION = '671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36
 interface MusicGenInput {
   prompt: string;
   duration?: number;
-  model_version?: 'melody' | 'large' | 'medium' | 'small';
+  model_version?: 'stereo-large' | 'stereo-melody-large';
   temperature?: number;
   top_k?: number;
   top_p?: number;
@@ -26,6 +28,7 @@ interface MusicGenInput {
   multi_band_diffusion?: boolean;
   normalization_strategy?: 'loudness' | 'clip' | 'peak' | 'rms';
   seed?: number;
+  input_audio?: string; // For melody continuation
 }
 
 interface ReplicatePrediction {
@@ -51,16 +54,22 @@ export class MusicGenProvider {
       // Build the enhanced prompt with context
       const enhancedPrompt = this.buildPrompt(prompt, params);
       
+      // Use the model specified by the agent
+      const modelVersion = params.model || 'stereo-large';
+      
+      console.log(`🎵 Using model: ${modelVersion} for prompt: "${enhancedPrompt}"`);
+      
       // Create the prediction
       const prediction = await this.createPrediction({
         prompt: enhancedPrompt,
         duration: params.duration || 8,
-        model_version: 'large',
+        model_version: modelVersion,
         temperature: 1.0,
         top_k: 250,
         classifier_free_guidance: 3,
         output_format: 'wav',
-        multi_band_diffusion: false,
+        multi_band_diffusion: true, // Enable for better audio quality
+        ...(params.inputAudio && { input_audio: params.inputAudio })
       });
 
       // Poll for completion
@@ -98,6 +107,32 @@ export class MusicGenProvider {
     return parts.join(', ');
   }
 
+  private isMelodicContent(prompt: string): boolean {
+    // Keywords that suggest melodic content
+    const melodicKeywords = [
+      'melody', 'melodic', 'lead', 'solo', 'arpeggio', 'arpeggiated',
+      'piano', 'guitar', 'violin', 'flute', 'saxophone', 'trumpet',
+      'synth lead', 'vocal', 'singing', 'harmonic', 'chord progression',
+      'riff', 'hook', 'topline', 'countermelody', 'ostinato'
+    ];
+    
+    // Keywords that suggest rhythmic/textural content
+    const rhythmicKeywords = [
+      'drum', 'kick', 'snare', 'hihat', 'percussion', 'beat',
+      'bass', 'sub', 'groove', 'rhythm', 'texture', 'atmosphere',
+      'pad', 'ambient', 'noise', 'fx', 'sfx', 'impact'
+    ];
+    
+    const lowerPrompt = prompt.toLowerCase();
+    
+    // Count keyword matches
+    const melodicScore = melodicKeywords.filter(k => lowerPrompt.includes(k)).length;
+    const rhythmicScore = rhythmicKeywords.filter(k => lowerPrompt.includes(k)).length;
+    
+    // If explicitly melodic or more melodic keywords, use melody model
+    return melodicScore > rhythmicScore;
+  }
+
   private async createPrediction(input: MusicGenInput): Promise<ReplicatePrediction> {
     const response = await axios.post(
       REPLICATE_API_URL,
@@ -110,13 +145,14 @@ export class MusicGenProvider {
           'Authorization': `Token ${this.apiToken}`,
           'Content-Type': 'application/json',
         },
+        timeout: 30000, // 30 second timeout for initial request
       }
     );
 
     return response.data;
   }
 
-  private async pollPrediction(id: string, maxAttempts = 60): Promise<ReplicatePrediction> {
+  private async pollPrediction(id: string, maxAttempts = 90): Promise<ReplicatePrediction> {
     let attempts = 0;
     
     while (attempts < maxAttempts) {
@@ -126,6 +162,7 @@ export class MusicGenProvider {
           headers: {
             'Authorization': `Token ${this.apiToken}`,
           },
+          timeout: 30000, // 30 second timeout for each poll request
         }
       );
 
@@ -135,11 +172,16 @@ export class MusicGenProvider {
         return prediction;
       }
 
+      // Log progress every 10 seconds
+      if (attempts % 10 === 0) {
+        console.log(`⏳ Generation in progress... (${attempts}s elapsed)`);
+      }
+
       // Wait before polling again
       await new Promise(resolve => setTimeout(resolve, 1000));
       attempts++;
     }
 
-    throw new Error('Generation timed out');
+    throw new Error('Generation timed out after 90 seconds');
   }
 }

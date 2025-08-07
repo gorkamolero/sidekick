@@ -24,7 +24,10 @@
       "WebFetch(domain:ai-sdk.dev)",
       "WebFetch(domain:mastra.ai)",
       "Bash(npm view:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "WebFetch(domain:www.electronjs.org)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:www.fileside.app)"
     ],
     "deny": [
       "Bash(git push:*)",

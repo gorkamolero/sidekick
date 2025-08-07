@@ -25,8 +25,12 @@ export function GenerationPanel() {
     const message = prompt.trim();
     if (!message || isProcessing) return;
     
-    await sendMessage(message);
+    // Clear input immediately for better UX
     setPrompt('');
+    
+    // Send message asynchronously
+    await sendMessage(message);
+    
     // Re-focus after sending
     setTimeout(() => textareaRef.current?.focus(), 100);
   };

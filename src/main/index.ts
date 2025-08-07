@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
@@ -63,3 +63,21 @@ app.on('activate', () => {
 // code. You can also put them in separate files and import them here.
 import './ipc';
 import './mastra';
+
+// Handle native file drag for external applications
+ipcMain.on('ondragstart', (event, filePath: string) => {
+  console.log('🎵 Native drag started for file:', filePath);
+  
+  // Create a proper icon for macOS (required - cannot be empty!)
+  // Create a small 16x16 music note icon
+  const iconBuffer = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAEZSURBVDiNpZOxSgNBEIa/2T07OZPcJWihjaWFlvoEPoBgY2Ej2FkJ2vgCPoGlrY2djYWlhYWIlSAIFsYgaDiTXHJ7O2thOHPJBRz4YZiZ/b6Z3ZlV/BN5lfqCpsM8MAcMAiVAAHvAGrBkjNkr5F+VAQDXB0aB98/hAfAI7BpjLooxFADUAPr6QE3k4+oCk4BzzrlJYOKrgKoOpKqj7WzU9zUA13XH2tk4HYjHXwXaRj4H7LcFVPVEVZdVdTyELqrqiqpeZMD9OKzGsiwBnuM4N57nHTvn3hNgHnhJ/CKw8R1g0xjzBFR838+FEAghqDdbrYdhGC00m83bdiAAy4SQDyE5BVaBlwLoAw6BKWA6+XpkQJJL/r3/iE9Yum6c9fMQiAAAAABJRU5ErkJggg==',
+    'base64'
+  );
+  const icon = nativeImage.createFromBuffer(iconBuffer);
+  
+  event.sender.startDrag({
+    file: filePath,
+    icon: icon
+  });
+});

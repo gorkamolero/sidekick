@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GenerationPanel } from './components/GenerationPanel';
 import { HistoryPanel } from './components/HistoryPanel';
@@ -10,8 +10,7 @@ import { Archive } from 'lucide-react';
 const queryClient = new QueryClient();
 
 export function App() {
-  const { setProject, initializeStore } = useStore();
-  const [showHistory, setShowHistory] = useState(false);
+  const { setProject, initializeStore, activeView, setActiveView } = useStore();
 
   useEffect(() => {
     console.log('App mounted');
@@ -48,12 +47,13 @@ export function App() {
             </div>
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => setShowHistory(!showHistory)}
+                onClick={() => setActiveView(activeView === 'history' ? 'chat' : 'history')}
                 className={`p-2 rounded transition-all duration-200 ${
-                  showHistory 
+                  activeView === 'history' 
                     ? 'bg-[var(--color-accent)] text-black' 
                     : 'hover:bg-[var(--color-surface)] text-[var(--color-text-secondary)]'
                 }`}
+                title="View History"
               >
                 <Archive className="w-4 h-4" />
               </button>
@@ -64,21 +64,18 @@ export function App() {
           <ConversationTabs />
           
           {/* Main content area */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Chat/Main area */}
-            <div className="flex-1 flex flex-col">
-              {/* Chat messages */}
-              <ChatInterface />
-              
-              {/* Generation panel at bottom */}
-              <GenerationPanel />
-            </div>
-            
-            {/* History sidebar */}
-            {showHistory && (
-              <div className="w-80 border-l border-[var(--color-text-dim)] bg-[var(--color-surface)]/50">
-                <HistoryPanel />
-              </div>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {activeView === 'chat' ? (
+              <>
+                {/* Chat messages */}
+                <ChatInterface />
+                
+                {/* Generation panel at bottom */}
+                <GenerationPanel />
+              </>
+            ) : (
+              /* History view */
+              <HistoryPanel />
             )}
           </div>
           

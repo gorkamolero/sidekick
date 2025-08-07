@@ -13,6 +13,7 @@ interface AppState {
   currentConversation: Conversation | null;
   conversations: Conversation[];
   openTabIds: string[]; // Track which conversations are open as tabs
+  activeView: 'chat' | 'history'; // Track whether showing chat or history
   
   // Actions
   addGeneration: (generation: Generation) => void;
@@ -28,6 +29,7 @@ interface AppState {
   deleteConversation: (conversationId: string) => void;
   closeTab: (conversationId: string) => void;
   openTab: (conversationId: string) => void;
+  setActiveView: (view: 'chat' | 'history') => void;
   initializeStore: () => void;
 }
 
@@ -42,6 +44,7 @@ export const useStore = create<AppState>()(
   currentConversation: null,
   conversations: [],
   openTabIds: [],
+  activeView: 'chat',
   
   // Existing actions
   addGeneration: (generation) => 
@@ -76,10 +79,13 @@ export const useStore = create<AppState>()(
         ConversationStorage.saveConversations(updatedConversations);
         conversationDB.saveConversation(newConversation).catch(console.error);
         
+        const newTabIds = [newConversation.id, ...state.openTabIds.slice(0, 9)];
+        localStorage.setItem('openTabIds', JSON.stringify(newTabIds));
+        
         return {
           currentConversation: newConversation,
           conversations: updatedConversations,
-          openTabIds: [newConversation.id, ...state.openTabIds.slice(0, 9)], // Keep max 10 tabs
+          openTabIds: newTabIds, // Keep max 10 tabs
         };
       }
       
@@ -151,6 +157,9 @@ export const useStore = create<AppState>()(
           ? state.openTabIds 
           : [conversationId, ...state.openTabIds.slice(0, 9)];
         
+        // Save to localStorage
+        localStorage.setItem('openTabIds', JSON.stringify(newOpenTabs));
+        
         return { 
           currentConversation: conversation,
           openTabIds: newOpenTabs,
@@ -183,15 +192,22 @@ export const useStore = create<AppState>()(
     set((state) => {
       const updatedTabIds = state.openTabIds.filter(id => id !== conversationId);
       
+      // Save updated tabs to localStorage
+      localStorage.setItem('openTabIds', JSON.stringify(updatedTabIds));
+      
       // If closing current conversation, switch to another tab
       if (state.currentConversation?.id === conversationId) {
         if (updatedTabIds.length > 0) {
           const nextConversation = state.conversations.find(c => c.id === updatedTabIds[0]);
+          if (nextConversation) {
+            ConversationStorage.saveCurrentConversationId(nextConversation.id);
+          }
           return {
             openTabIds: updatedTabIds,
             currentConversation: nextConversation || null,
           };
         } else {
+          ConversationStorage.saveCurrentConversationId(null);
           return {
             openTabIds: updatedTabIds,
             currentConversation: null,
@@ -205,12 +221,18 @@ export const useStore = create<AppState>()(
   openTab: (conversationId) =>
     set((state) => {
       if (!state.openTabIds.includes(conversationId)) {
+        const newTabIds = [conversationId, ...state.openTabIds.slice(0, 9)];
+        // Save updated tabs to localStorage
+        localStorage.setItem('openTabIds', JSON.stringify(newTabIds));
         return {
-          openTabIds: [conversationId, ...state.openTabIds.slice(0, 9)],
+          openTabIds: newTabIds,
         };
       }
       return state;
     }),
+  
+  setActiveView: (view) => 
+    set({ activeView: view }),
     
   initializeStore: async () => {
     // Load conversations from localStorage
@@ -220,15 +242,25 @@ export const useStore = create<AppState>()(
       ? conversations.find(c => c.id === currentConversationId) || null
       : null;
     
-    // Set initial open tabs (current conversation + last few)
-    const initialOpenTabs = currentConversation 
-      ? [currentConversation.id, ...conversations.slice(0, 3).map(c => c.id).filter(id => id !== currentConversation.id)]
-      : conversations.slice(0, 3).map(c => c.id);
+    // Load saved open tabs from localStorage
+    const savedTabIds = localStorage.getItem('openTabIds');
+    let openTabIds: string[] = [];
+    
+    if (savedTabIds) {
+      // Use saved tabs, but filter out any that no longer exist
+      const parsedTabIds = JSON.parse(savedTabIds) as string[];
+      openTabIds = parsedTabIds.filter(id => conversations.some(c => c.id === id));
+    }
+    
+    // If no saved tabs but we have a current conversation, open just that tab
+    if (openTabIds.length === 0 && currentConversation) {
+      openTabIds = [currentConversation.id];
+    }
     
     set({
       conversations,
       currentConversation,
-      openTabIds: [...new Set(initialOpenTabs)].slice(0, 10),
+      openTabIds,
     });
     
     // Load full history from IndexedDB in background

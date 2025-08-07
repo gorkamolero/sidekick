@@ -15,6 +15,12 @@ export function ConversationTabs() {
 
   const handleCloseTab = (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation(); // Prevent tab selection
+    
+    // If this is the last tab, create a new one before closing
+    if (openTabIds.length === 1) {
+      createNewConversation();
+    }
+    
     closeTab(conversationId);
   };
   
@@ -50,17 +56,22 @@ export function ConversationTabs() {
               <span className="text-xs font-mono truncate flex-1 text-left">
                 {conv.title}
               </span>
-              {openTabs.length > 1 && (
-                <button
-                  onClick={(e) => handleCloseTab(e, conv.id)}
-                  className={`
-                    opacity-0 group-hover:opacity-100 transition-opacity
-                    hover:text-red-400 ml-1 flex-shrink-0
-                  `}
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+              <div
+                onClick={(e) => handleCloseTab(e, conv.id)}
+                className={`
+                  opacity-0 group-hover:opacity-100 transition-opacity
+                  hover:text-red-400 ml-1 flex-shrink-0 cursor-pointer
+                `}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleCloseTab(e as any, conv.id);
+                  }
+                }}
+              >
+                <X className="w-3 h-3" />
+              </div>
               {isActive && (
                 <motion.div
                   layoutId="activeTab"

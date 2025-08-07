@@ -58,4 +58,9 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.removeListener(channel, callback);
     },
   },
+  
+  // Native file drag for external apps
+  startDrag: (filePath: string) => {
+    ipcRenderer.send('ondragstart', filePath);
+  },
 });
