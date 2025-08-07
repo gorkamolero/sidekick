@@ -3,22 +3,27 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GenerationPanel } from './components/GenerationPanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ChatInterface } from './components/ChatInterface';
+import { ConversationTabs } from './components/ConversationTabs';
 import { useStore } from './lib/store';
 import { Archive } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
 export function App() {
-  const { setProject } = useStore();
+  const { setProject, initializeStore } = useStore();
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     console.log('App mounted');
+    
+    // Initialize store (load conversations from storage)
+    initializeStore();
+    
     // Get project info on startup
     window.electron.getProjectInfo().then(setProject).catch(err => {
       console.error('Error getting project info:', err);
     });
-  }, [setProject]);
+  }, [setProject, initializeStore]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -54,6 +59,9 @@ export function App() {
               </button>
             </div>
           </header>
+          
+          {/* Conversation tabs */}
+          <ConversationTabs />
           
           {/* Main content area */}
           <div className="flex-1 flex overflow-hidden">
