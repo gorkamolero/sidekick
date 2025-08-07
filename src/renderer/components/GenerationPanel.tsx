@@ -1,24 +1,18 @@
 import React, { useState } from 'react';
 import { useStore } from '../lib/store';
 import { Terminal, Cpu } from 'lucide-react';
-import { useAudioGeneration } from '../hooks/useAudioGeneration';
+import { useAgent } from '../hooks/useAgent';
 
 export function GenerationPanel() {
   const [prompt, setPrompt] = useState('');
   const { currentProject } = useStore();
-  const { mutate: generate, isPending } = useAudioGeneration();
+  const { sendMessage, isProcessing } = useAgent();
 
-  const handleGenerate = async () => {
-    if (!prompt.trim() || isPending) return;
+  const handleSubmit = async () => {
+    if (!prompt.trim() || isProcessing) return;
     
-    generate(prompt, {
-      onSuccess: () => {
-        setPrompt(''); // Clear prompt on success
-      },
-      onError: (error) => {
-        console.error('Generation failed:', error);
-      }
-    });
+    await sendMessage(prompt);
+    setPrompt('');
   };
 
   return (
@@ -45,7 +39,7 @@ export function GenerationPanel() {
                      transition-colors"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && e.metaKey) {
-                handleGenerate();
+                handleSubmit();
               }
             }}
           />
@@ -70,16 +64,16 @@ export function GenerationPanel() {
       </div>
 
       <button
-        onClick={handleGenerate}
-        disabled={isPending || !prompt.trim()}
+        onClick={handleSubmit}
+        disabled={isProcessing || !prompt.trim()}
         className={`w-full px-4 py-3 border-t border-[var(--color-text-dim)] text-sm uppercase tracking-[0.2em]
                    transition-all duration-200 flex items-center justify-center gap-3
-                   ${isPending 
+                   ${isProcessing 
                      ? 'bg-[var(--color-surface)] text-[var(--color-text-dim)]' 
                      : 'hover:bg-[var(--color-accent)] hover:text-black cursor-pointer'
                    } disabled:cursor-not-allowed`}
       >
-        {isPending ? (
+        {isProcessing ? (
           <>
             <Cpu className="w-4 h-4 animate-pulse" />
             <span className="cursor">PROCESSING</span>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GenerationPanel } from './components/GenerationPanel';
 import { HistoryPanel } from './components/HistoryPanel';
+import { ChatInterface } from './components/ChatInterface';
 import { useStore } from './lib/store';
 import { Archive } from 'lucide-react';
 
@@ -55,15 +56,8 @@ export function App() {
           <div className="flex-1 flex overflow-hidden">
             {/* Chat/Main area */}
             <div className="flex-1 flex flex-col">
-              {/* Chat messages will go here */}
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="text-center py-16">
-                  <div className="text-[var(--color-text-dim)] text-sm font-mono">
-                    <p>// READY FOR NEURAL SYNTHESIS</p>
-                    <p className="mt-2 text-xs">TYPE YOUR COMMAND BELOW</p>
-                  </div>
-                </div>
-              </div>
+              {/* Chat messages */}
+              <ChatInterface />
               
               {/* Generation panel at bottom */}
               <GenerationPanel />

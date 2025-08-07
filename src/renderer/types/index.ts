@@ -16,6 +16,25 @@ export interface ProjectInfo {
   timeSignature: string;
 }
 
+export type MessageRole = 'user' | 'assistant' | 'system';
+
+export interface ChatMessage {
+  id: string;
+  role: MessageRole;
+  content: string;
+  timestamp: Date;
+  toolCalls?: any[];
+  isStreaming?: boolean;
+}
+
+export interface Conversation {
+  id: string;
+  messages: ChatMessage[];
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 declare global {
   interface Window {
     electron: {
