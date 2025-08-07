@@ -27,7 +27,16 @@
       "Bash(npm uninstall:*)",
       "WebFetch(domain:www.electronjs.org)",
       "WebFetch(domain:gist.github.com)",
-      "WebFetch(domain:www.fileside.app)"
+      "WebFetch(domain:www.fileside.app)",
+      "Bash(node:*)",
+      "Bash(npm test)",
+      "Bash(npm test:*)",
+      "mcp__linear__list_issue_statuses",
+      "mcp__linear__list_my_issues",
+      "mcp__linear__get_issue",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(tree:*)"
     ],
     "deny": [
       "Bash(git push:*)",
