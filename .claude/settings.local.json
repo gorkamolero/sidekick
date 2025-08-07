@@ -23,10 +23,13 @@
       "WebFetch(domain:v5.ai-sdk.dev)",
       "WebFetch(domain:ai-sdk.dev)",
       "WebFetch(domain:mastra.ai)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git add -A)",
+      "Bash(git add .)"
     ]
   }
 }

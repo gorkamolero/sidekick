@@ -78,9 +78,6 @@ Would you like me to generate a complementary loop based on these characteristic
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Terminal className="w-4 h-4 text-[var(--color-accent)]" />
-            <label className="text-xs text-[var(--color-text-secondary)] uppercase tracking-[0.2em]">
-              COMMAND INPUT
-            </label>
           </div>
           <div className="flex items-center gap-3">
             <button

@@ -115,11 +115,6 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
     
     // Stream all parts including tool calls and results
     for await (const part of result.fullStream) {
-      // Only log tool calls and results
-      if (part.type === 'tool-call' || part.type === 'tool-result') {
-        console.log(`📦 ${part.type}:`, part.toolName);
-      }
-      
       if (part.type === 'text-delta') {
         event.sender.send('agent:streamChunk', { 
           type: 'text', 

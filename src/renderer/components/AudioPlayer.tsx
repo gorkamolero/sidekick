@@ -67,49 +67,35 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 max-w-md">
+    <div className="inline-flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-text-dim)] rounded px-3 py-2">
       <audio ref={audioRef} src={audioUrl} />
       
-      <div className="mb-3">
-        <h4 className="text-green-400 font-medium text-sm mb-1">Generated Loop</h4>
-        <p className="text-gray-300 text-sm line-clamp-2">{prompt}</p>
-        <p className="text-gray-500 text-xs mt-1">{duration}s duration</p>
-      </div>
+      <button
+        onClick={togglePlayback}
+        className="w-8 h-8 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-full flex items-center justify-center text-black transition-colors"
+      >
+        {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+      </button>
 
-      <div className="flex items-center space-x-3">
-        <button
-          onClick={togglePlayback}
-          className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white transition-colors"
-        >
-          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-        </button>
-
-        <div className="flex-1">
-          <div className="bg-gray-700 h-2 rounded-full">
-            <div 
-              className="bg-green-500 h-2 rounded-full transition-all duration-100"
-              style={{ width: `${(currentTime / duration) * 100}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
+      <div className="w-32">
+        <div className="bg-[var(--color-void)] h-1 rounded-full">
+          <div 
+            className="bg-[var(--color-accent)] h-1 rounded-full transition-all duration-100"
+            style={{ width: `${(currentTime / duration) * 100}%` }}
+          />
         </div>
-
-        <button
-          onClick={handleDownload}
-          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded flex items-center justify-center text-gray-300 transition-colors"
-        >
-          <Download size={14} />
-        </button>
       </div>
+      
+      <span className="text-xs text-[var(--color-text-secondary)] font-mono">
+        {formatTime(currentTime)}/{formatTime(duration)}
+      </span>
 
-      {localFilePath && (
-        <p className="text-xs text-gray-500 mt-2">
-          Saved to: {localFilePath.split('/').pop()}
-        </p>
-      )}
+      <button
+        onClick={handleDownload}
+        className="w-8 h-8 hover:bg-[var(--color-surface)] rounded flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
+      >
+        <Download size={14} />
+      </button>
     </div>
   );
 }

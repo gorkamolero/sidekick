@@ -84,20 +84,23 @@ function MessageItem({ message }: { message: ChatMessage }) {
               {message.toolCalls.map((tool, index) => (
                 <div key={index}>
                   {tool.toolName === 'generateMusic' ? (
-                    tool.status === 'complete' && tool.result?.audioUrl ? (
-                      <AudioPlayer
-                        audioUrl={tool.result.audioUrl}
-                        localFilePath={tool.result.localFilePath}
-                        prompt={tool.result.prompt}
-                        duration={tool.result.duration}
-                      />
+                    tool.status === 'complete' ? (
+                      tool.result?.audioUrl ? (
+                        <AudioPlayer
+                          audioUrl={tool.result.audioUrl}
+                          localFilePath={tool.result.localFilePath}
+                          prompt={tool.result.prompt}
+                          duration={tool.result.duration}
+                        />
+                      ) : (
+                        <div className="text-xs text-red-400 font-mono bg-[var(--color-void)] p-2 rounded">
+                          ❌ Generation failed: {tool.result?.message || 'Unknown error'}
+                        </div>
+                      )
                     ) : (
                       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 max-w-md animate-pulse">
                         <div className="mb-3">
-                          <h4 className="text-green-400 font-medium text-sm mb-1">Generating Loop...</h4>
-                          <p className="text-gray-300 text-sm">
-                            {tool.args?.prompt || 'Creating music...'}
-                          </p>
+                          <h4 className="text-green-400 font-medium text-sm mb-1">Generating...</h4>
                         </div>
                         <div className="flex items-center space-x-2">
                           <div className="w-10 h-10 bg-gray-700 rounded-full" />
