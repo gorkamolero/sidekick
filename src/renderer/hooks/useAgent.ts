@@ -49,16 +49,21 @@ export function useAgent() {
     addMessage(assistantMessage);
 
     try {
-      // Get conversation history and add project context
-      const messages = currentConversation?.messages
+      // Build conversation history including the new message
+      const previousMessages = currentConversation?.messages
         .filter(m => m.role !== 'system')
         .map(m => ({ role: m.role, content: m.content })) || [];
-
-      // Add project context to the user's message if available
-      if (currentProject && messages.length > 0 && messages[messages.length - 1].role === 'user') {
-        const lastMessage = messages[messages.length - 1];
-        lastMessage.content = `${lastMessage.content}\n\n[Project Context: BPM=${currentProject.bpm}, Key=${currentProject.key}, Time Signature=${currentProject.timeSignature}]`;
+      
+      // Add the new user message with project context
+      let userMessageContent = content.trim();
+      if (currentProject) {
+        userMessageContent = `${userMessageContent}\n\n[Project Context: BPM=${currentProject.bpm}, Key=${currentProject.key}, Time Signature=${currentProject.timeSignature}]`;
       }
+      
+      const messages = [
+        ...previousMessages,
+        { role: 'user', content: userMessageContent }
+      ];
 
       let fullContent = '';
       const toolCalls: any[] = [];
