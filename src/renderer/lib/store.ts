@@ -14,6 +14,7 @@ interface AppState {
   // Actions
   addGeneration: (generation: Generation) => void;
   setProject: (project: ProjectInfo) => void;
+  updateProject: (updates: Partial<ProjectInfo>) => void;
   setGenerating: (status: boolean) => void;
   
   // Chat actions
@@ -39,6 +40,12 @@ export const useStore = create<AppState>((set, get) => ({
       generations: [generation, ...state.generations].slice(0, 50) 
     })),
   setProject: (project) => set({ currentProject: project }),
+  updateProject: (updates) => 
+    set((state) => ({ 
+      currentProject: state.currentProject 
+        ? { ...state.currentProject, ...updates }
+        : null
+    })),
   setGenerating: (status) => set({ isGenerating: status }),
   
   // Chat actions

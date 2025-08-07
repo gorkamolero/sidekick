@@ -9,7 +9,21 @@
       "Bash(mkdir:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run lint)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(claude mcp add:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "mcp__linear__list_teams",
+      "mcp__linear__list_issues",
+      "mcp__linear__create_project",
+      "Bash(rm:*)",
+      "mcp__linear__create_issue",
+      "mcp__linear__update_issue",
+      "Bash(ls:*)",
+      "WebFetch(domain:v5.ai-sdk.dev)",
+      "WebFetch(domain:ai-sdk.dev)",
+      "WebFetch(domain:mastra.ai)",
+      "Bash(npm view:*)"
     ],
     "deny": [
       "Bash(git push:*)"

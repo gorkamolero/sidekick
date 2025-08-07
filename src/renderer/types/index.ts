@@ -40,6 +40,18 @@ declare global {
     electron: {
       saveAudioFile: (buffer: ArrayBuffer, filename: string) => Promise<string>;
       getProjectInfo: () => Promise<ProjectInfo>;
+      agent: {
+        sendMessage: (messages: any[]) => Promise<{ success: boolean; response?: any; error?: string }>;
+        streamMessage: (messages: any[], onChunk: (chunk: any) => void) => Promise<{ success: boolean; error?: string }>;
+      };
+      musicgen: {
+        generate: (params: { prompt: string; duration?: number }) => 
+          Promise<{ success: boolean; result?: any; error?: string }>;
+        onGenerate: (callback: (event: any, data: any) => void) => () => void;
+      };
+      audio: {
+        onGenerated: (callback: (event: any, data: any) => void) => () => void;
+      };
     };
   }
 }

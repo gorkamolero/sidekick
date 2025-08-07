@@ -17,7 +17,6 @@ export interface GenerationResult {
   duration: number;
 }
 
-export { MusicGenProvider } from './musicgen';
 
 // Initialize OpenRouter
 const openrouter = createOpenRouter({

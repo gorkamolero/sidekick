@@ -5,7 +5,8 @@ import { useAgent } from '../hooks/useAgent';
 
 export function GenerationPanel() {
   const [prompt, setPrompt] = useState('');
-  const { currentProject } = useStore();
+  const [isEditingProject, setIsEditingProject] = useState(false);
+  const { currentProject, updateProject } = useStore();
   const { sendMessage, isProcessing } = useAgent();
 
   const handleSubmit = async () => {
@@ -49,16 +50,79 @@ export function GenerationPanel() {
           <div className="flex gap-6 mt-3 text-xs text-[var(--color-text-secondary)] font-mono">
             <span className="flex items-center gap-1">
               <span className="text-[var(--color-text-dim)]">BPM:</span>
-              <span className="text-[var(--color-accent)]">{currentProject.bpm}</span>
+              {isEditingProject ? (
+                <input
+                  type="number"
+                  value={currentProject.bpm}
+                  onChange={(e) => updateProject({ bpm: parseInt(e.target.value) || 120 })}
+                  className="w-12 bg-[var(--color-surface)] border border-[var(--color-accent)] px-1 text-[var(--color-accent)] focus:outline-none"
+                  min="60"
+                  max="200"
+                />
+              ) : (
+                <span 
+                  className="text-[var(--color-accent)] cursor-pointer hover:underline"
+                  onClick={() => setIsEditingProject(true)}
+                >
+                  {currentProject.bpm}
+                </span>
+              )}
             </span>
             <span className="flex items-center gap-1">
               <span className="text-[var(--color-text-dim)]">KEY:</span>
-              <span className="text-[var(--color-accent)]">{currentProject.key}</span>
+              {isEditingProject ? (
+                <select
+                  value={currentProject.key}
+                  onChange={(e) => updateProject({ key: e.target.value })}
+                  className="bg-[var(--color-surface)] border border-[var(--color-accent)] px-1 text-[var(--color-accent)] focus:outline-none"
+                >
+                  {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'].map(note => (
+                    <React.Fragment key={note}>
+                      <option value={`${note} major`}>{note} major</option>
+                      <option value={`${note} minor`}>{note} minor</option>
+                    </React.Fragment>
+                  ))}
+                </select>
+              ) : (
+                <span 
+                  className="text-[var(--color-accent)] cursor-pointer hover:underline"
+                  onClick={() => setIsEditingProject(true)}
+                >
+                  {currentProject.key}
+                </span>
+              )}
             </span>
             <span className="flex items-center gap-1">
               <span className="text-[var(--color-text-dim)]">SIG:</span>
-              <span className="text-[var(--color-accent)]">{currentProject.timeSignature}</span>
+              {isEditingProject ? (
+                <select
+                  value={currentProject.timeSignature}
+                  onChange={(e) => updateProject({ timeSignature: e.target.value })}
+                  className="bg-[var(--color-surface)] border border-[var(--color-accent)] px-1 text-[var(--color-accent)] focus:outline-none"
+                >
+                  <option value="3/4">3/4</option>
+                  <option value="4/4">4/4</option>
+                  <option value="5/4">5/4</option>
+                  <option value="6/8">6/8</option>
+                  <option value="7/8">7/8</option>
+                </select>
+              ) : (
+                <span 
+                  className="text-[var(--color-accent)] cursor-pointer hover:underline"
+                  onClick={() => setIsEditingProject(true)}
+                >
+                  {currentProject.timeSignature}
+                </span>
+              )}
             </span>
+            {isEditingProject && (
+              <button
+                onClick={() => setIsEditingProject(false)}
+                className="text-[var(--color-accent)] hover:underline"
+              >
+                [SAVE]
+              </button>
+            )}
           </div>
         )}
       </div>

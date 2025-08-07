@@ -1,10 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useStore } from '../lib/store';
-import { createSidekickAgent } from '../lib/agent/mastra-config';
 import { ChatMessage } from '../types';
 
 export function useAgent() {
-  const { addMessage, updateMessage, addGeneration } = useStore();
+  const { addMessage, updateMessage, currentConversation, currentProject } = useStore();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const sendMessage = useCallback(async (content: string) => {
@@ -32,44 +31,71 @@ export function useAgent() {
     addMessage(assistantMessage);
 
     try {
-      // Get the agent
-      const agent = createSidekickAgent();
+      // Get conversation history and add project context
+      const messages = currentConversation?.messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({ role: m.role, content: m.content })) || [];
 
-      // Stream the response
-      const stream = await agent.text({
-        messages: [{ role: 'user', content: content.trim() }],
-        stream: true,
-      });
+      // Add project context to the user's message if available
+      if (currentProject && messages.length > 0 && messages[messages.length - 1].role === 'user') {
+        const lastMessage = messages[messages.length - 1];
+        lastMessage.content = `${lastMessage.content}\n\n[Project Context: BPM=${currentProject.bpm}, Key=${currentProject.key}, Time Signature=${currentProject.timeSignature}]`;
+      }
 
       let fullContent = '';
-      let toolCalls: any[] = [];
+      const toolCalls: any[] = [];
 
-      for await (const chunk of stream) {
-        if (chunk.text) {
-          fullContent += chunk.text;
-          updateMessage(assistantMessage.id, {
-            content: fullContent,
-            isStreaming: true,
-          });
-        }
-
-        // Handle tool calls
-        if (chunk.toolCalls) {
-          toolCalls = chunk.toolCalls;
-          updateMessage(assistantMessage.id, {
-            toolCalls: toolCalls,
-          });
-
-          // Process music generation tool calls
-          for (const toolCall of toolCalls) {
-            if (toolCall.name === 'generate_music') {
-              // Trigger actual music generation
-              const { prompt, duration, style } = toolCall.arguments;
-              // TODO: Connect to actual music generation
-              console.log('Generating music:', { prompt, duration, style });
+      // Use Mastra through IPC
+      const result = await window.electron.agent.streamMessage(
+        messages,
+        (chunk) => {
+          if (chunk.type === 'text' && chunk.text) {
+            fullContent += chunk.text;
+            updateMessage(assistantMessage.id, {
+              content: fullContent,
+              isStreaming: true,
+            });
+          } else if (chunk.type === 'tool-call') {
+            console.log('🎵 Tool call received:', chunk);
+            toolCalls.push({
+              type: 'tool-call',
+              toolName: chunk.toolName,
+              toolCallId: chunk.toolCallId,
+              args: chunk.args,
+              status: 'generating',
+            });
+            updateMessage(assistantMessage.id, {
+              toolCalls: toolCalls,
+            });
+          } else if (chunk.type === 'tool-result') {
+            console.log('🔧 Tool result received:', chunk);
+            // Update the existing tool call with the result
+            const toolIndex = toolCalls.findIndex(t => t.toolCallId === chunk.toolCallId);
+            if (toolIndex >= 0) {
+              toolCalls[toolIndex] = {
+                ...toolCalls[toolIndex],
+                type: 'tool-result',
+                result: chunk.result,
+                status: 'complete',
+              };
+            } else {
+              toolCalls.push({
+                type: 'tool-result',
+                toolName: chunk.toolName,
+                toolCallId: chunk.toolCallId,
+                result: chunk.result,
+                status: 'complete',
+              });
             }
+            updateMessage(assistantMessage.id, {
+              toolCalls: toolCalls,
+            });
           }
         }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Unknown error');
       }
 
       // Mark as complete
@@ -82,13 +108,13 @@ export function useAgent() {
     } catch (error) {
       console.error('Agent error:', error);
       updateMessage(assistantMessage.id, {
-        content: 'Error: Failed to process your request.',
+        content: `Error: ${error instanceof Error ? error.message : 'Failed to process request'}`,
         isStreaming: false,
       });
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, addMessage, updateMessage, addGeneration]);
+  }, [isProcessing, addMessage, updateMessage, currentConversation]);
 
   return {
     sendMessage,

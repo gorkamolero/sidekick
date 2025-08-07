@@ -13,8 +13,11 @@ export function App() {
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
+    console.log('App mounted');
     // Get project info on startup
-    window.electron.getProjectInfo().then(setProject);
+    window.electron.getProjectInfo().then(setProject).catch(err => {
+      console.error('Error getting project info:', err);
+    });
   }, [setProject]);
 
   return (

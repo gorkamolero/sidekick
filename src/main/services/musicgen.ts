@@ -1,5 +1,15 @@
 import axios from 'axios';
-import { MusicProvider, GenerationParams, GenerationResult } from './providers';
+
+interface GenerationParams {
+  bpm?: number;
+  key?: string;
+  duration?: number;
+}
+
+interface GenerationResult {
+  audioUrl: string;
+  duration: number;
+}
 
 const REPLICATE_API_URL = 'https://api.replicate.com/v1/predictions';
 const MUSICGEN_VERSION = '671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb';
@@ -25,7 +35,7 @@ interface ReplicatePrediction {
   error?: string;
 }
 
-export class MusicGenProvider implements MusicProvider {
+export class MusicGenProvider {
   name = 'MusicGen (Meta)';
   private apiToken: string;
 
