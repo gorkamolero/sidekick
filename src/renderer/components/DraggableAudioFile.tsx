@@ -50,10 +50,15 @@ export const DraggableAudioFile: React.FC<DraggableAudioFileProps> = ({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={`
-        group relative flex items-center gap-3 p-3 rounded-lg
-        bg-gray-800/50 hover:bg-gray-700/50 transition-all cursor-move
-        border border-gray-700 hover:border-purple-500/50
-        ${isDragging ? 'opacity-50 scale-95' : ''}
+        group relative flex items-center gap-3 p-4 rounded-lg
+        bg-gradient-to-r from-gray-800/50 to-gray-800/30
+        hover:from-gray-700/60 hover:to-purple-900/20
+        transition-all duration-200 cursor-grab active:cursor-grabbing
+        border-2 border-gray-700 hover:border-purple-500
+        ${isDragging ? 'opacity-50 scale-95 border-purple-400 animate-pulse' : ''}
+        hover:shadow-lg hover:shadow-purple-500/20
+        hover:translate-y-[-2px]
+        select-none
       `}
     >
       {/* Audio icon */}
@@ -96,8 +101,12 @@ export const DraggableAudioFile: React.FC<DraggableAudioFileProps> = ({
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         {onPlay && (
           <button
-            onClick={onPlay}
-            className="p-1.5 rounded-md hover:bg-gray-600/50 text-gray-400 hover:text-white transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay();
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="p-1.5 rounded-md hover:bg-gray-600/50 text-gray-400 hover:text-white transition-colors z-10"
             title="Play"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -107,8 +116,12 @@ export const DraggableAudioFile: React.FC<DraggableAudioFileProps> = ({
         )}
         {onDelete && (
           <button
-            onClick={onDelete}
-            className="p-1.5 rounded-md hover:bg-red-600/20 text-gray-400 hover:text-red-400 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="p-1.5 rounded-md hover:bg-red-600/20 text-gray-400 hover:text-red-400 transition-colors z-10"
             title="Delete"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -118,12 +131,24 @@ export const DraggableAudioFile: React.FC<DraggableAudioFileProps> = ({
         )}
       </div>
 
-      {/* Drag hint */}
+      {/* Drag indicator - shows on hover */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 text-xs text-purple-400 bg-gray-900/80 px-2 py-1 rounded">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM11.5 15.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
+          </svg>
+          DRAG TO DAW
+        </div>
+      </div>
+
+      {/* Drag overlay - shows while dragging */}
       {isDragging && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 rounded-lg">
-          <span className="text-purple-400 font-medium">
-            Drop into DAW
-          </span>
+        <div className="absolute inset-0 flex items-center justify-center bg-purple-900/40 backdrop-blur-sm rounded-lg border-2 border-purple-400 border-dashed">
+          <div className="bg-gray-900/90 px-4 py-2 rounded-lg">
+            <span className="text-purple-300 font-medium text-sm">
+              🎵 Drop into your DAW
+            </span>
+          </div>
         </div>
       )}
     </div>
