@@ -18,8 +18,8 @@ contextBridge.exposeInMainWorld('electron', {
       // Start streaming
       const result = await ipcRenderer.invoke('agent:streamMessage', { messages });
       
-      // Clean up listener
-      ipcRenderer.removeListener('agent:streamChunk', listener);
+      // DON'T remove the listener here - it needs to stay active for streaming!
+      // The renderer will handle cleanup when needed
       
       return result;
     },
