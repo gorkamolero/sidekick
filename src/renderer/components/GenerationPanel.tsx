@@ -1,29 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../lib/store';
-import { Terminal, Cpu } from 'lucide-react';
+import { Terminal, Cpu, X } from 'lucide-react';
 import { useAgent } from '../hooks/useAgent';
 
 export function GenerationPanel() {
   const [prompt, setPrompt] = useState('');
   const [isEditingProject, setIsEditingProject] = useState(false);
   const { currentProject, updateProject } = useStore();
-  const { sendMessage, isProcessing } = useAgent();
+  const { sendMessage, isProcessing, cancelMessage } = useAgent();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [localProcessing, setLocalProcessing] = useState(false);
+
+  // Auto-focus on mount and when processing completes
+  useEffect(() => {
+    if (!isProcessing && !localProcessing) {
+      textareaRef.current?.focus();
+    }
+  }, [isProcessing, localProcessing]);
 
   const handleSubmit = async () => {
-    if (!prompt.trim() || isProcessing) return;
+    const message = prompt.trim();
+    if (!message || isProcessing || localProcessing) return;
     
-    await sendMessage(prompt);
+    // Clear input immediately for better UX
     setPrompt('');
+    setLocalProcessing(true);
+    
+    try {
+      await sendMessage(message);
+    } finally {
+      setLocalProcessing(false);
+      // Re-focus after sending
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
   };
 
   return (
     <div className="border-b border-[var(--color-text-dim)]">
       <div className="p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Terminal className="w-4 h-4 text-[var(--color-accent)]" />
-          <label className="text-xs text-[var(--color-text-secondary)] uppercase tracking-[0.2em]">
-            COMMAND INPUT
-          </label>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-[var(--color-accent)]" />
+            <label className="text-xs text-[var(--color-text-secondary)] uppercase tracking-[0.2em]">
+              COMMAND INPUT
+            </label>
+          </div>
+          <div className="text-xs text-[var(--color-text-dim)] font-mono">
+            {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
+          </div>
         </div>
         
         <div className="relative">
@@ -31,6 +55,7 @@ export function GenerationPanel() {
             &gt;_
           </span>
           <textarea
+            ref={textareaRef}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="neural_synthesis --prompt "
@@ -38,11 +63,14 @@ export function GenerationPanel() {
                      resize-none h-20 placeholder-[var(--color-text-dim)] focus:outline-none 
                      focus:border-[var(--color-accent)] text-[var(--color-text-primary)] font-mono text-sm
                      transition-colors"
+            disabled={isProcessing || localProcessing}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && e.metaKey) {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
                 handleSubmit();
               }
             }}
+            autoFocus
           />
         </div>
         
@@ -127,27 +155,37 @@ export function GenerationPanel() {
         )}
       </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={isProcessing || !prompt.trim()}
-        className={`w-full px-4 py-3 border-t border-[var(--color-text-dim)] text-sm uppercase tracking-[0.2em]
-                   transition-all duration-200 flex items-center justify-center gap-3
-                   ${isProcessing 
-                     ? 'bg-[var(--color-surface)] text-[var(--color-text-dim)]' 
-                     : 'hover:bg-[var(--color-accent)] hover:text-black cursor-pointer'
-                   } disabled:cursor-not-allowed`}
-      >
-        {isProcessing ? (
-          <>
-            <Cpu className="w-4 h-4 animate-pulse" />
-            <span className="cursor">PROCESSING</span>
-          </>
-        ) : (
-          <>
-            <span>[EXECUTE]</span>
-          </>
+      <div className="flex border-t border-[var(--color-text-dim)]">
+        <button
+          onClick={(isProcessing || localProcessing) ? cancelMessage : handleSubmit}
+          disabled={(!isProcessing && !localProcessing && !prompt.trim())}
+          className={`flex-1 px-4 py-3 text-sm uppercase tracking-[0.2em]
+                     transition-all duration-200 flex items-center justify-center gap-3
+                     ${(isProcessing || localProcessing)
+                       ? 'bg-red-900/20 hover:bg-red-900/40 text-red-400 hover:text-red-300' 
+                       : 'hover:bg-[var(--color-accent)] hover:text-black'
+                     } disabled:cursor-not-allowed disabled:opacity-50`}
+        >
+          {(isProcessing || localProcessing) ? (
+            <>
+              <X className="w-4 h-4" />
+              <span>CANCEL</span>
+            </>
+          ) : (
+            <>
+              <span>[EXECUTE] {prompt.trim() && '⌘↵'}</span>
+            </>
+          )}
+        </button>
+        {(isProcessing || localProcessing) && (
+          <div className="px-4 py-3 border-l border-[var(--color-text-dim)] flex items-center gap-2">
+            <Cpu className="w-4 h-4 animate-pulse text-[var(--color-accent)]" />
+            <span className="text-xs uppercase tracking-wider text-[var(--color-text-secondary)] animate-pulse">
+              Processing
+            </span>
+          </div>
         )}
-      </button>
+      </div>
     </div>
   );
 }

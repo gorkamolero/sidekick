@@ -1,15 +1,33 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useStore } from '../lib/store';
 import { ChatMessage } from '../types';
 
 export function useAgent() {
   const { addMessage, updateMessage, currentConversation, currentProject } = useStore();
   const [isProcessing, setIsProcessing] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isProcessing) return;
 
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    
     setIsProcessing(true);
+    
+    // Add a timeout to prevent stuck processing state
+    const timeoutId = setTimeout(() => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      setIsProcessing(false);
+      console.error('Message processing timeout after 30s');
+    }, 30000);
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -112,12 +130,23 @@ export function useAgent() {
         isStreaming: false,
       });
     } finally {
+      clearTimeout(timeoutId);
+      setIsProcessing(false);
+      abortControllerRef.current = null;
+    }
+  }, [isProcessing, addMessage, updateMessage, currentConversation, currentProject]);
+
+  const cancelMessage = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
       setIsProcessing(false);
     }
-  }, [isProcessing, addMessage, updateMessage, currentConversation]);
+  }, []);
 
   return {
     sendMessage,
     isProcessing,
+    cancelMessage,
   };
 }
