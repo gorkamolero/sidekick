@@ -28,14 +28,37 @@ export function GenerationPanel() {
     const message = prompt.trim();
     if (!message || isProcessing) return;
     
-    // Add mode context to the message
-    const modeContext = {
-      loop: '[LOOP MODE: Generate a 4-8 second seamless loop] ',
-      sample: '[SAMPLE MODE: Generate a 1 second one-shot/hit/sample] ',
-      inspiration: '[INSPIRATION MODE: Generate a 15-30 second musical idea] '
+    // Add mode-specific system instructions
+    const modeInstructions = {
+      loop: `[SYSTEM: LOOP MODE ACTIVE]
+Generate a 4-8 second seamless loop that can be repeated indefinitely.
+- Create consistent energy throughout
+- No fade in or fade out
+- Ensure the end connects smoothly to the beginning
+- Optimize for layering in a DAW
+
+User request: ${message}`,
+      
+      sample: `[SYSTEM: SAMPLE MODE ACTIVE]
+Generate a 1 second one-shot, hit, or sample.
+- Focus on impact and transient
+- Create a single, distinct sound
+- Suitable for triggering and sampling
+- Think: drum hits, vocal chops, FX, stabs
+
+User request: ${message}`,
+      
+      inspiration: `[SYSTEM: INSPIRATION MODE ACTIVE]
+Generate a 15-30 second musical idea or sketch.
+- Include musical development and progression
+- Can have intro, main section, and variation
+- Allow for creative exploration
+- Suitable as a song starter or arrangement reference
+
+User request: ${message}`
     };
     
-    const enhancedMessage = modeContext[mode] + message;
+    const enhancedMessage = modeInstructions[mode];
     
     // Clear input immediately for better UX
     setPrompt('');
@@ -91,6 +114,49 @@ Would you like me to generate a complementary loop based on these characteristic
   return (
     <div className="border-b border-[var(--color-text-dim)]">
       <div className="p-4">
+        {/* Mode selector buttons - at the top */}
+        <div className="flex gap-1 mb-3">
+          <button
+            onClick={() => setMode('loop')}
+            className={`px-3 py-1.5 text-xs uppercase tracking-wider transition-all duration-200
+                       backdrop-blur-sm border border-[var(--color-text-dim)]
+                       ${mode === 'loop' 
+                         ? 'bg-[var(--color-accent)]/30 text-[var(--color-accent)] border-[var(--color-accent)]' 
+                         : 'bg-black/40 text-[var(--color-text-secondary)] hover:bg-black/60 hover:text-[var(--color-text-primary)]'
+                       }`}
+            title="Loop Mode: 4-8 second seamless loops"
+          >
+            <Repeat className="w-3 h-3 inline-block mr-1" />
+            Loop
+          </button>
+          <button
+            onClick={() => setMode('sample')}
+            className={`px-3 py-1.5 text-xs uppercase tracking-wider transition-all duration-200
+                       backdrop-blur-sm border border-[var(--color-text-dim)]
+                       ${mode === 'sample' 
+                         ? 'bg-[var(--color-accent)]/30 text-[var(--color-accent)] border-[var(--color-accent)]' 
+                         : 'bg-black/40 text-[var(--color-text-secondary)] hover:bg-black/60 hover:text-[var(--color-text-primary)]'
+                       }`}
+            title="Sample Mode: 1 second one-shots and hits"
+          >
+            <Zap className="w-3 h-3 inline-block mr-1" />
+            Sample
+          </button>
+          <button
+            onClick={() => setMode('inspiration')}
+            className={`px-3 py-1.5 text-xs uppercase tracking-wider transition-all duration-200
+                       backdrop-blur-sm border border-[var(--color-text-dim)]
+                       ${mode === 'inspiration' 
+                         ? 'bg-[var(--color-accent)]/30 text-[var(--color-accent)] border-[var(--color-accent)]' 
+                         : 'bg-black/40 text-[var(--color-text-secondary)] hover:bg-black/60 hover:text-[var(--color-text-primary)]'
+                       }`}
+            title="Inspiration Mode: 15-30 second musical ideas"
+          >
+            <Lightbulb className="w-3 h-3 inline-block mr-1" />
+            Inspire
+          </button>
+        </div>
+        
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Terminal className="w-4 h-4 text-[var(--color-accent)]" />
