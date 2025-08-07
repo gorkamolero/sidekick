@@ -124,7 +124,7 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
       if (part.type === 'text-delta') {
         event.sender.send('agent:streamChunk', { 
           type: 'text', 
-          text: part.textDelta 
+          text: part.textDelta || part.text  // Fallback to part.text if textDelta is undefined
         });
       } else if (part.type === 'tool-call') {
         console.log('🎵 Tool call started:', part.toolName);
