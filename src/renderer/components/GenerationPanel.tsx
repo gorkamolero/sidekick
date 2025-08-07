@@ -13,30 +13,22 @@ export function GenerationPanel() {
   const { currentProject, updateProject } = useStore();
   const { sendMessage, isProcessing, cancelMessage } = useAgent();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [localProcessing, setLocalProcessing] = useState(false);
 
   // Auto-focus on mount and when processing completes
   useEffect(() => {
-    if (!isProcessing && !localProcessing) {
+    if (!isProcessing) {
       textareaRef.current?.focus();
     }
-  }, [isProcessing, localProcessing]);
+  }, [isProcessing]);
 
   const handleSubmit = async () => {
     const message = prompt.trim();
-    if (!message || isProcessing || localProcessing) return;
+    if (!message || isProcessing) return;
     
-    // Clear input immediately for better UX
+    await sendMessage(message);
     setPrompt('');
-    setLocalProcessing(true);
-    
-    try {
-      await sendMessage(message);
-    } finally {
-      setLocalProcessing(false);
-      // Re-focus after sending
-      setTimeout(() => textareaRef.current?.focus(), 100);
-    }
+    // Re-focus after sending
+    setTimeout(() => textareaRef.current?.focus(), 100);
   };
 
   const handleAudioFile = async (file: File) => {
@@ -126,7 +118,7 @@ Would you like me to generate a complementary loop based on these characteristic
                      resize-none h-20 placeholder-[var(--color-text-dim)] focus:outline-none 
                      focus:border-[var(--color-accent)] text-[var(--color-text-primary)] font-mono text-sm
                      transition-colors"
-            disabled={isProcessing || localProcessing}
+            disabled={isProcessing}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -220,27 +212,27 @@ Would you like me to generate a complementary loop based on these characteristic
 
       <div className="flex border-t border-[var(--color-text-dim)]">
         <button
-          onClick={(isProcessing || localProcessing) ? cancelMessage : handleSubmit}
-          disabled={(!isProcessing && !localProcessing && !prompt.trim())}
+          onClick={isProcessing ? cancelMessage : handleSubmit}
+          disabled={(!isProcessing && !prompt.trim())}
           className={`flex-1 px-4 py-3 text-sm uppercase tracking-[0.2em]
                      transition-all duration-200 flex items-center justify-center gap-3
-                     ${(isProcessing || localProcessing)
+                     ${isProcessing
                        ? 'bg-red-900/20 hover:bg-red-900/40 text-red-400 hover:text-red-300' 
                        : 'hover:bg-[var(--color-accent)] hover:text-black'
                      } disabled:cursor-not-allowed disabled:opacity-50`}
         >
-          {(isProcessing || localProcessing) ? (
+          {isProcessing ? (
             <>
               <X className="w-4 h-4" />
               <span>CANCEL</span>
             </>
           ) : (
             <>
-              <span>[EXECUTE] {prompt.trim() && '⌘↵'}</span>
+              <span>[EXECUTE] {prompt.trim() && '↵'}</span>
             </>
           )}
         </button>
-        {(isProcessing || localProcessing) && (
+        {isProcessing && (
           <div className="px-4 py-3 border-l border-[var(--color-text-dim)] flex items-center gap-2">
             <Cpu className="w-4 h-4 animate-pulse text-[var(--color-accent)]" />
             <span className="text-xs uppercase tracking-wider text-[var(--color-text-secondary)] animate-pulse">
