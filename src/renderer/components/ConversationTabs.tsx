@@ -6,23 +6,28 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function ConversationTabs() {
   const { 
     conversations, 
-    currentConversation, 
+    currentConversation,
+    openTabIds,
     createNewConversation, 
     loadConversation,
-    deleteConversation 
+    closeTab
   } = useStore();
 
-  const handleDeleteConversation = (e: React.MouseEvent, conversationId: string) => {
+  const handleCloseTab = (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation(); // Prevent tab selection
-    if (confirm('Delete this conversation?')) {
-      deleteConversation(conversationId);
-    }
+    closeTab(conversationId);
   };
+  
+  // Get actual tab conversations
+  const openTabs = openTabIds
+    .map(id => conversations.find(c => c.id === id))
+    .filter(Boolean);
 
   return (
     <div className="flex items-center gap-1 px-3 py-2 bg-[var(--color-void)] border-b border-[var(--color-text-dim)] overflow-x-auto">
       <AnimatePresence mode="popLayout">
-        {conversations.slice(0, 10).map((conv) => {
+        {openTabs.map((conv) => {
+          if (!conv) return null;
           const isActive = currentConversation?.id === conv.id;
           return (
             <motion.button
@@ -45,9 +50,9 @@ export function ConversationTabs() {
               <span className="text-xs font-mono truncate flex-1 text-left">
                 {conv.title}
               </span>
-              {conversations.length > 1 && (
+              {openTabs.length > 1 && (
                 <button
-                  onClick={(e) => handleDeleteConversation(e, conv.id)}
+                  onClick={(e) => handleCloseTab(e, conv.id)}
                   className={`
                     opacity-0 group-hover:opacity-100 transition-opacity
                     hover:text-red-400 ml-1 flex-shrink-0
@@ -80,12 +85,6 @@ export function ConversationTabs() {
         <Plus className="w-3 h-3" />
         <span className="text-xs font-mono">NEW</span>
       </button>
-      
-      {conversations.length > 10 && (
-        <div className="text-xs text-[var(--color-text-dim)] font-mono ml-2">
-          +{conversations.length - 10} more
-        </div>
-      )}
     </div>
   );
 }

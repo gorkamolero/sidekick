@@ -12,6 +12,7 @@ interface AppState {
   // Chat state
   currentConversation: Conversation | null;
   conversations: Conversation[];
+  openTabIds: string[]; // Track which conversations are open as tabs
   
   // Actions
   addGeneration: (generation: Generation) => void;
@@ -25,6 +26,8 @@ interface AppState {
   createNewConversation: () => void;
   loadConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => void;
+  closeTab: (conversationId: string) => void;
+  openTab: (conversationId: string) => void;
   initializeStore: () => void;
 }
 
@@ -38,6 +41,7 @@ export const useStore = create<AppState>()(
   // Chat state
   currentConversation: null,
   conversations: [],
+  openTabIds: [],
   
   // Existing actions
   addGeneration: (generation) => 
@@ -75,6 +79,7 @@ export const useStore = create<AppState>()(
         return {
           currentConversation: newConversation,
           conversations: updatedConversations,
+          openTabIds: [newConversation.id, ...state.openTabIds.slice(0, 9)], // Keep max 10 tabs
         };
       }
       
@@ -140,7 +145,16 @@ export const useStore = create<AppState>()(
       const conversation = state.conversations.find(conv => conv.id === conversationId);
       if (conversation) {
         ConversationStorage.saveCurrentConversationId(conversationId);
-        return { currentConversation: conversation };
+        
+        // Add to open tabs if not already there
+        const newOpenTabs = state.openTabIds.includes(conversationId) 
+          ? state.openTabIds 
+          : [conversationId, ...state.openTabIds.slice(0, 9)];
+        
+        return { 
+          currentConversation: conversation,
+          openTabIds: newOpenTabs,
+        };
       }
       return state;
     }),
@@ -165,6 +179,39 @@ export const useStore = create<AppState>()(
       return { conversations: updatedConversations };
     }),
     
+  closeTab: (conversationId) =>
+    set((state) => {
+      const updatedTabIds = state.openTabIds.filter(id => id !== conversationId);
+      
+      // If closing current conversation, switch to another tab
+      if (state.currentConversation?.id === conversationId) {
+        if (updatedTabIds.length > 0) {
+          const nextConversation = state.conversations.find(c => c.id === updatedTabIds[0]);
+          return {
+            openTabIds: updatedTabIds,
+            currentConversation: nextConversation || null,
+          };
+        } else {
+          return {
+            openTabIds: updatedTabIds,
+            currentConversation: null,
+          };
+        }
+      }
+      
+      return { openTabIds: updatedTabIds };
+    }),
+    
+  openTab: (conversationId) =>
+    set((state) => {
+      if (!state.openTabIds.includes(conversationId)) {
+        return {
+          openTabIds: [conversationId, ...state.openTabIds.slice(0, 9)],
+        };
+      }
+      return state;
+    }),
+    
   initializeStore: async () => {
     // Load conversations from localStorage
     const conversations = ConversationStorage.loadConversations();
@@ -173,9 +220,15 @@ export const useStore = create<AppState>()(
       ? conversations.find(c => c.id === currentConversationId) || null
       : null;
     
+    // Set initial open tabs (current conversation + last few)
+    const initialOpenTabs = currentConversation 
+      ? [currentConversation.id, ...conversations.slice(0, 3).map(c => c.id).filter(id => id !== currentConversation.id)]
+      : conversations.slice(0, 3).map(c => c.id);
+    
     set({
       conversations,
       currentConversation,
+      openTabIds: [...new Set(initialOpenTabs)].slice(0, 10),
     });
     
     // Load full history from IndexedDB in background

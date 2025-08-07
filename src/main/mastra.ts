@@ -5,6 +5,7 @@ import { z } from 'zod';
 import * as dotenv from 'dotenv';
 import { MusicGenProvider } from './services/musicgen';
 import { AudioService } from './services/audio';
+import { SIDEKICK_SYSTEM_PROMPT } from '../shared/prompts';
 
 // Load environment variables
 dotenv.config();
@@ -89,31 +90,13 @@ const getProjectInfo = createTool({
   },
 });
 
-// Simple, clear system prompt
-const SYSTEM_PROMPT = `You are Sidekick, a music producer's AI assistant.
-
-RULES:
-1. Only generate music when explicitly asked (e.g., "generate", "make", "create" + music terms)
-2. For greetings and questions, respond normally without generating music
-3. When asked to generate music, call the generateMusic tool immediately with a detailed prompt
-
-For music generation:
-- Include BPM and key in the prompt text
-- Be specific about genre, instruments, and mood
-- Use project context when user doesn't specify BPM/key
-
-For conversation:
-- Be helpful and concise
-- Answer production questions
-- Chat naturally`;
-
 // Create the Mastra agent with tools
 const agent = new Agent({
   id: 'sidekick-agent',
   name: 'Sidekick',
   description: 'AI assistant for music producers',
   model: openrouter('moonshotai/kimi-k2'),
-  instructions: SYSTEM_PROMPT,
+  instructions: SIDEKICK_SYSTEM_PROMPT,
   tools: {
     generateMusic,
     getProjectInfo,
