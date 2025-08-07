@@ -4,8 +4,12 @@
       "Bash(npm install:*)",
       "Bash(mv:*)",
       "Bash(npm run start:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(mkdir:*)"
     ],
-    "deny": []
+    "deny": [
+      "Bash(git push:*)"
+    ]
   }
 }
