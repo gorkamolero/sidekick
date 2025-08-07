@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { ChatMessage, Conversation } from '../../types';
 import { ConversationStorage, conversationDB } from '../../storage';
+import { TabStorage } from '../../storage/tabStorage';
 
 export interface ChatSlice {
   currentConversation: Conversation | null;
@@ -42,7 +43,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
         conversationDB.saveConversation(newConversation).catch(console.error);
         
         const newTabIds = [newConversation.id, ...state.openTabIds.slice(0, 9)];
-        localStorage.setItem('openTabIds', JSON.stringify(newTabIds));
+        TabStorage.save(newTabIds);
         
         return {
           currentConversation: newConversation,
@@ -114,7 +115,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
           ? state.openTabIds 
           : [conversationId, ...state.openTabIds.slice(0, 9)];
         
-        localStorage.setItem('openTabIds', JSON.stringify(newOpenTabs));
+        TabStorage.save(newOpenTabs);
         
         return { 
           currentConversation: conversation,
@@ -147,7 +148,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
     set((state) => {
       const updatedTabIds = state.openTabIds.filter(id => id !== conversationId);
       
-      localStorage.setItem('openTabIds', JSON.stringify(updatedTabIds));
+      TabStorage.save(updatedTabIds);
       
       if (state.currentConversation?.id === conversationId) {
         if (updatedTabIds.length > 0) {
@@ -175,7 +176,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
     set((state) => {
       if (!state.openTabIds.includes(conversationId)) {
         const newTabIds = [conversationId, ...state.openTabIds.slice(0, 9)];
-        localStorage.setItem('openTabIds', JSON.stringify(newTabIds));
+        TabStorage.save(newTabIds);
         return {
           openTabIds: newTabIds,
         };
@@ -193,13 +194,8 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
       ? conversations.find(c => c.id === currentConversationId) || null
       : null;
     
-    const savedTabIds = localStorage.getItem('openTabIds');
-    let openTabIds: string[] = [];
-    
-    if (savedTabIds) {
-      const parsedTabIds = JSON.parse(savedTabIds) as string[];
-      openTabIds = parsedTabIds.filter(id => conversations.some(c => c.id === id));
-    }
+    const savedTabIds = TabStorage.load();
+    let openTabIds = savedTabIds.filter(id => conversations.some(c => c.id === id));
     
     if (openTabIds.length === 0 && currentConversation) {
       openTabIds = [currentConversation.id];
