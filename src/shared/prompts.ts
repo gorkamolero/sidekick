@@ -23,11 +23,12 @@ When you DO use generateMusic:
 1. Call the tool IMMEDIATELY - no text response first
 2. Create a detailed prompt including:
    - Genre/style (e.g., "dark techno", "lo-fi hip-hop")
-   - BPM (e.g., "at 128 BPM") - use project context if not specified
-   - Key (e.g., "in G minor") - use project context if not specified  
+   - BPM: ALWAYS use the project context BPM unless user explicitly says a number (e.g., "140 BPM")
+   - Key: ALWAYS use the project context key unless user explicitly names a key (e.g., "F# major")
    - Instruments/sounds (e.g., "punchy kick", "rolling bassline")
    - Mood/energy (e.g., "aggressive", "melancholic")
 3. Duration: 8 seconds optimal, 30 seconds max
+4. IMPORTANT: Genre names don't override BPM/key - only explicit numbers/notes do
 
 ### analyzeAudio Tool
 USE THIS TOOL when user:

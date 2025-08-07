@@ -136,12 +136,12 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
           status: 'calling'
         });
       } else if (part.type === 'tool-result') {
-        console.log('🔧 Tool result:', part.toolName, part.result);
+        console.log('🔧 Tool result:', part.toolName, part.output);
         event.sender.send('agent:streamChunk', { 
           type: 'tool-result',
           toolName: part.toolName,
           toolCallId: part.toolCallId,
-          result: part.result,
+          result: part.output,
           status: 'complete'
         });
       }
