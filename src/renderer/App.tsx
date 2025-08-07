@@ -4,13 +4,18 @@ import { GenerationPanel } from './components/GenerationPanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ChatInterface } from './components/ChatInterface';
 import { ConversationTabs } from './components/ConversationTabs';
+import { MusicServiceSelector } from './components/MusicServiceSelector';
+import { ThemeSelector } from './components/ThemeSelector';
+import { PonyAnimations } from './components/PonyAnimations';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useStore } from './lib/store';
 import { Archive } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
-export function App() {
+function AppContent() {
   const { setProject, initializeStore, activeView, setActiveView } = useStore();
+  const { theme } = useTheme();
 
   useEffect(() => {
     console.log('App mounted');
@@ -27,6 +32,9 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="h-screen flex flex-col bg-[var(--color-void)] relative overflow-hidden">
+        {/* Show pony animations only when MLP theme is active */}
+        {theme === 'pony' && <PonyAnimations />}
+        
         {/* Scanner effect */}
         <div className="scanner" />
         
@@ -46,6 +54,8 @@ export function App() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <MusicServiceSelector />
+              <ThemeSelector />
               <button 
                 onClick={() => setActiveView(activeView === 'history' ? 'chat' : 'history')}
                 className={`p-2 rounded transition-all duration-200 ${
@@ -87,5 +97,13 @@ export function App() {
         </div>
       </div>
     </QueryClientProvider>
+  );
+}
+
+export function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
