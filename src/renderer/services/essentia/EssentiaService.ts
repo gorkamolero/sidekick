@@ -1,4 +1,7 @@
-import { Essentia, EssentiaWASM } from 'essentia.js';
+// @ts-ignore - Essentia.js types are not fully compatible
+import Essentia from 'essentia.js/dist/essentia.js-core.es.js';
+// @ts-ignore - Essentia.js types are not fully compatible  
+import { EssentiaWASM } from 'essentia.js/dist/essentia-wasm.es.js';
 import { AudioAnalysisResult } from './types';
 import { AudioLoader } from './audioLoader';
 import { FeatureExtractor } from './featureExtractor';
@@ -24,12 +27,16 @@ export class EssentiaService {
     if (this.isInitialized) return;
     
     try {
-      // Initialize Essentia.js
-      this.essentia = new Essentia(EssentiaWASM);
+      // Initialize Essentia.js - EssentiaWASM() returns a promise
+      const wasmModule = await EssentiaWASM();
+      this.essentia = new Essentia(wasmModule);
       this.featureExtractor = new FeatureExtractor(this.essentia);
       
       this.isInitialized = true;
       console.log('✅ Essentia.js initialized successfully');
+      if (this.essentia.version) {
+        console.log('Essentia version:', this.essentia.version);
+      }
     } catch (error) {
       console.error('Failed to initialize Essentia.js:', error);
       throw new Error(`Essentia.js initialization failed: ${error}`);
