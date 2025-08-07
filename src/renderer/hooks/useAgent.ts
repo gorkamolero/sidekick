@@ -94,7 +94,7 @@ export function useAgent() {
               toolCalls: toolCalls,
             });
           } else if (chunk.type === 'tool-result') {
-            console.log('🔧 Tool result received:', chunk);
+            console.log('🔧 Tool result received in renderer:', chunk);
             // Update the existing tool call with the result
             const toolIndex = toolCalls.findIndex(t => t.toolCallId === chunk.toolCallId);
             if (toolIndex >= 0) {
@@ -113,8 +113,9 @@ export function useAgent() {
                 status: 'complete',
               });
             }
+            // Force a new array reference to trigger React re-render
             updateMessage(assistantMessage.id, {
-              toolCalls: toolCalls,
+              toolCalls: [...toolCalls],
             });
           }
         }

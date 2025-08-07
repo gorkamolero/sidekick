@@ -113,13 +113,12 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
     // Use the Mastra agent's stream method
     const result = await agent.stream(messages);
     
-    console.log('📡 Stream started, waiting for parts...');
-    let partCount = 0;
-    
     // Stream all parts including tool calls and results
     for await (const part of result.fullStream) {
-      partCount++;
-      console.log(`📦 Part ${partCount}:`, part.type, part);
+      // Only log tool calls and results
+      if (part.type === 'tool-call' || part.type === 'tool-result') {
+        console.log(`📦 ${part.type}:`, part.toolName);
+      }
       
       if (part.type === 'text-delta') {
         event.sender.send('agent:streamChunk', { 
@@ -127,7 +126,6 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
           text: part.textDelta || part.text  // Fallback to part.text if textDelta is undefined
         });
       } else if (part.type === 'tool-call') {
-        console.log('🎵 Tool call started:', part.toolName);
         event.sender.send('agent:streamChunk', { 
           type: 'tool-call',
           toolName: part.toolName,
@@ -136,7 +134,7 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
           status: 'calling'
         });
       } else if (part.type === 'tool-result') {
-        console.log('🔧 Tool result:', part.toolName, part.output);
+        console.log('✅ Tool result received:', part.toolName, part.output);
         event.sender.send('agent:streamChunk', { 
           type: 'tool-result',
           toolName: part.toolName,
@@ -146,8 +144,6 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
         });
       }
     }
-    
-    console.log(`✅ Stream completed with ${partCount} parts`);
     return { success: true };
   } catch (error) {
     console.error('Agent error:', error);
