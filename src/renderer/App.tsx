@@ -1,22 +1,30 @@
+import React, { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { GenerationPanel } from './components/GenerationPanel';
+import { HistoryPanel } from './components/HistoryPanel';
+import { useStore } from './lib/store';
+
+const queryClient = new QueryClient();
+
 export function App() {
+  const { setProject } = useStore();
+
+  useEffect(() => {
+    // Get project info on startup
+    window.electron.getProjectInfo().then(setProject);
+  }, [setProject]);
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[var(--color-ableton-dark)] to-black">
-      <div className="text-center space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-6xl font-bold text-white tracking-tight">
-            Sidekick
-          </h1>
-          <div className="h-1 w-24 bg-[var(--color-ableton-blue)] mx-auto rounded-full"></div>
-        </div>
-        <p className="text-xl text-gray-400 font-light">
-          AI Music Generation for Ableton Live
-        </p>
-        <div className="pt-8">
-          <p className="text-sm text-gray-500">
-            Ready to generate your next loop
-          </p>
-        </div>
+    <QueryClientProvider client={queryClient}>
+      <div className="h-screen flex flex-col bg-[var(--color-ableton-dark)]">
+        <header className="bg-black/50 p-4 border-b border-gray-800">
+          <h1 className="text-lg font-semibold">Sidekick</h1>
+          <p className="text-xs text-gray-400">AI Loops for Ableton Live</p>
+        </header>
+        
+        <GenerationPanel />
+        <HistoryPanel />
       </div>
-    </div>
+    </QueryClientProvider>
   );
 }
