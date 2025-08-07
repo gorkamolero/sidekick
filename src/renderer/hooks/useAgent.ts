@@ -54,16 +54,19 @@ export function useAgent() {
         .filter(m => m.role !== 'system')
         .map(m => ({ role: m.role, content: m.content })) || [];
       
-      // Add the new user message with project context
-      let userMessageContent = content.trim();
-      if (currentProject) {
-        userMessageContent = `${userMessageContent}\n\n[Project Context: BPM=${currentProject.bpm}, Key=${currentProject.key}, Time Signature=${currentProject.timeSignature}]`;
-      }
-      
+      // Add the new user message
       const messages = [
         ...previousMessages,
-        { role: 'user', content: userMessageContent }
+        { role: 'user' as const, content: content.trim() }
       ];
+      
+      // Add project context as system message if available
+      if (currentProject && messages.length === 1) {
+        messages.unshift({
+          role: 'system' as const,
+          content: `Current project context: BPM=${currentProject.bpm}, Key=${currentProject.key}, Time Signature=${currentProject.timeSignature}. Use these values when generating music unless the user specifies otherwise.`
+        });
+      }
 
       let fullContent = '';
       const toolCalls: any[] = [];

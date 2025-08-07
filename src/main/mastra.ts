@@ -147,6 +147,7 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
       }
     }
     
+    console.log(`✅ Stream completed with ${partCount} parts`);
     return { success: true };
   } catch (error) {
     console.error('Agent error:', error);
