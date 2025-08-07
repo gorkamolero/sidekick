@@ -1,2 +1,2 @@
-export { useStore } from './store';
-export type { AppState } from './store';
+export { useStore } from './store/index';
+export type { AppState } from './store/index';
