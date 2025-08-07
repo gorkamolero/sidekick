@@ -1,23 +1,15 @@
 import React from 'react';
 import { Music, Zap, Hash, Clock, Mic, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AudioAnalysisResult } from '../services/essentia/types';
 
-interface AudioAnalysisResult {
+interface ExtendedAudioAnalysisResult extends AudioAnalysisResult {
   fileName?: string;
-  bpm: number;
-  key: string;
-  instruments: Array<{ label: string; confidence: number }>;
-  style: string[];
-  energy: number;
-  valence: number;
-  danceability: number;
-  loudness: number;
-  spectralCentroid: number;
 }
 
 interface AudioAnalysisDisplayProps {
-  analysis: AudioAnalysisResult;
-  onUseInGeneration?: (analysis: AudioAnalysisResult) => void;
+  analysis: ExtendedAudioAnalysisResult;
+  onUseInGeneration?: (analysis: ExtendedAudioAnalysisResult) => void;
 }
 
 export function AudioAnalysisDisplay({ analysis, onUseInGeneration }: AudioAnalysisDisplayProps) {

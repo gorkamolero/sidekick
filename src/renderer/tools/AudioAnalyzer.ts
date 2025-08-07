@@ -1,26 +1,5 @@
 import { essentiaService } from '../services/essentiaService';
-
-interface AudioAnalysisResult {
-  instruments: InstrumentTag[];
-  style: string[];
-  bpm: number;
-  key: string;
-  energy: number;
-  valence: number;
-  danceability: number;
-  loudness: number;
-  spectralCentroid: number;
-  tempo?: number;
-  beats?: Float32Array;
-  onset?: Float32Array;
-  mfcc?: Float32Array;
-  chromagram?: Float32Array;
-}
-
-interface InstrumentTag {
-  label: string;
-  confidence: number;
-}
+import { AudioAnalysisResult } from '../services/essentia/types';
 
 export class AudioAnalyzer {
   constructor() {
