@@ -13,6 +13,7 @@ import { Archive } from "lucide-react";
 import { Generation } from "./types";
 import { StatusBar } from "./components/StatusBar";
 import { ProjectBar } from "./components/ProjectBar";
+import { AbletonLinkStatus } from "./components/AbletonLinkStatus";
 
 const queryClient = new QueryClient();
 
@@ -80,7 +81,7 @@ function AppContent() {
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full">
           {/* Simplified header */}
-          <header className="border-b border-[var(--color-text-dim)] px-4 py-3 flex items-center justify-between">
+          <header className="px-4 py-1 flex items-center justify-between">
             <h1 className="text-sm font-bold duochrome tracking-wider">
               SIDEKICK
             </h1>
@@ -94,6 +95,9 @@ function AppContent() {
 
           {/* Project bar */}
           <ProjectBar />
+          
+          {/* Ableton Link status */}
+          <AbletonLinkStatus />
 
           {/* Conversation tabs */}
           <ConversationTabs />

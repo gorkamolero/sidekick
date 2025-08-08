@@ -16,11 +16,13 @@ export function ChatInterface() {
 
   if (!currentConversation || currentConversation.messages.length === 0) {
     return (
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="text-center py-16">
-          <div className="text-[var(--color-text-dim)] text-sm font-mono">
-            <p>// READY FOR NEURAL SYNTHESIS</p>
-            <p className="mt-2 text-xs">TYPE YOUR COMMAND BELOW</p>
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto p-4">
+          <div className="text-center py-16">
+            <div className="text-[var(--color-text-dim)] text-sm font-mono">
+              <p>// READY FOR NEURAL SYNTHESIS</p>
+              <p className="mt-2 text-xs">TYPE YOUR COMMAND BELOW</p>
+            </div>
           </div>
         </div>
       </div>
@@ -28,13 +30,15 @@ export function ChatInterface() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      <AnimatePresence initial={false}>
-        {currentConversation.messages.map((message) => (
-          <MessageItem key={message.id} message={message} />
-        ))}
-      </AnimatePresence>
-      <div ref={messagesEndRef} />
+    <div className="flex-1 overflow-y-auto overflow-x-hidden">
+      <div className="max-w-4xl mx-auto p-4 space-y-3">
+        <AnimatePresence initial={false}>
+          {currentConversation.messages.map((message) => (
+            <MessageItem key={message.id} message={message} />
+          ))}
+        </AnimatePresence>
+        <div ref={messagesEndRef} />
+      </div>
     </div>
   );
 }
@@ -48,26 +52,26 @@ function MessageItem({ message }: { message: ChatMessage }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
+      className={`flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`}
     >
-      <div className={`flex-shrink-0 p-2 rounded ${
+      <div className={`flex-shrink-0 p-1.5 rounded ${
         isUser 
           ? 'bg-[var(--color-accent)] text-black' 
           : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)]'
       }`}>
-        {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+        {isUser ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
       </div>
       
-      <div className={`flex-1 ${isUser ? 'text-right' : ''}`}>
-        <div className={`inline-block p-3 rounded ${
+      <div className={`min-w-0 flex-1 ${isUser ? 'flex justify-end' : ''}`}>
+        <div className={`inline-block max-w-full p-2.5 rounded text-sm ${
           isUser 
             ? 'bg-[var(--color-surface)] border border-[var(--color-accent)]' 
             : 'bg-[var(--color-surface)] border border-[var(--color-text-dim)]'
         }`}>
-          <div className="text-xs text-[var(--color-text-dim)] mb-1 font-mono">
+          <div className="text-[10px] text-[var(--color-text-dim)] mb-1 font-mono">
             {message.timestamp.toTimeString().slice(0, 8)}
           </div>
-          <div className="text-sm font-mono whitespace-pre-wrap">
+          <div className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
             {message.isStreaming ? (
               <>
                 {message.content}
