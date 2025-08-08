@@ -136,14 +136,14 @@ ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
       if (part.type === 'text-delta') {
         event.sender.send('agent:streamChunk', { 
           type: 'text', 
-          text: part.textDelta || part.text  // Fallback to part.text if textDelta is undefined
+          text: (part as any).textDelta || (part as any).text
         });
       } else if (part.type === 'tool-call') {
         event.sender.send('agent:streamChunk', { 
           type: 'tool-call',
           toolName: part.toolName,
-          toolCallId: part.toolCallId,
-          args: part.args,
+          toolCallId: (part as any).toolCallId,
+          args: (part as any).args,
           status: 'calling'
         });
       } else if (part.type === 'tool-result') {
@@ -180,6 +180,57 @@ ipcMain.handle('musicgen:generate', async (event, { prompt, duration }) => {
     };
   } catch (error) {
     console.error('MusicGen IPC error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+});
+
+// IPC handler for Vercel AI SDK chat streaming
+ipcMain.handle('chat:streamMessage', async (event, { messages }) => {
+  try {
+    console.log('📨 Chat stream request received with messages:', messages.length);
+    
+    // Use the MASTRA AGENT, not direct AI SDK!
+    const result = await agent.stream(messages);
+    
+    // Convert Mastra stream to AI SDK data stream format
+    const encoder = new TextEncoder();
+    
+    for await (const part of result.fullStream) {
+      if (part.type === 'text-delta') {
+        // Format as AI SDK text chunk
+        const text = (part as any).textDelta || (part as any).text || '';
+        const chunk = encoder.encode(`0:"${text.replace(/"/g, '\\"')}"\n`);
+        event.sender.send('chat:streamChunk', chunk);
+      } else if (part.type === 'tool-call') {
+        console.log('🔧 Tool call initiated:', part.toolName);
+        // Format as AI SDK tool call chunk
+        const chunk = encoder.encode(`9:${JSON.stringify({
+          toolCallId: part.toolCallId,
+          toolName: (part as any).toolName,
+          args: (part as any).args
+        })}\n`);
+        event.sender.send('chat:streamChunk', chunk);
+      } else if (part.type === 'tool-result') {
+        console.log('✅ Tool result received:', part.toolName, part.output);
+        // Format as AI SDK tool result chunk
+        const chunk = encoder.encode(`a:${JSON.stringify({
+          toolCallId: part.toolCallId,
+          result: part.output
+        })}\n`);
+        event.sender.send('chat:streamChunk', chunk);
+      }
+    }
+    
+    // Send finish chunk
+    const finishChunk = encoder.encode(`e:{}\n`);
+    event.sender.send('chat:streamChunk', finishChunk);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Chat streaming error:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

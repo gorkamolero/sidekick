@@ -3,6 +3,7 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { initializeAbletonLink, cleanupAbletonLink } from './services/abletonLink';
 import { AbletonDetector } from './services/abletonDetector';
+import './mastra';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {

@@ -56,7 +56,7 @@ export const analyzeAudio = createTool({
         // Set up one-time listener for response
         const responseChannel = `audio:analysis:response:${Date.now()}`;
         
-        mainWindow.webContents.once(responseChannel, (_event: any, result: any) => {
+        (mainWindow.webContents as any).once(responseChannel, (_event: any, result: any) => {
           if (result.error) {
             reject(new Error(result.error));
           } else {

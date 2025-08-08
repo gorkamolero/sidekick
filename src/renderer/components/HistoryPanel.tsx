@@ -14,7 +14,7 @@ export function HistoryPanel() {
   const filteredConversations = conversations.filter(conv => {
     const searchLower = searchQuery.toLowerCase();
     return conv.title.toLowerCase().includes(searchLower) ||
-           conv.messages.some(msg => msg.content.toLowerCase().includes(searchLower));
+           conv.messages.some((msg: any) => msg.content.toLowerCase().includes(searchLower));
   });
   
   // Filter generations based on search

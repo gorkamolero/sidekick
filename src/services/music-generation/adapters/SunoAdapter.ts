@@ -31,7 +31,7 @@ interface SunoGenerationResponse {
 export class SunoAdapter implements MusicGenerationService {
   name = 'suno';
   private config: SunoConfig;
-  private axiosInstance: axios.AxiosInstance;
+  private axiosInstance: any;
 
   constructor(config: SunoConfig) {
     this.config = config;

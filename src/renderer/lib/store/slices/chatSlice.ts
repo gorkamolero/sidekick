@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { ChatMessage, Conversation } from '../../types/index';
+import { ChatMessage, Conversation } from '../../../types';
 import { ConversationStorage, conversationDB } from '../../storage';
 import { TabStorage } from '../../storage/tabStorage';
 
@@ -80,7 +80,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
       
       const updatedConversation = {
         ...state.currentConversation,
-        messages: state.currentConversation.messages.map(msg =>
+        messages: state.currentConversation.messages.map((msg: any) =>
           msg.id === messageId ? { ...msg, ...updates } : msg
         ),
       };
