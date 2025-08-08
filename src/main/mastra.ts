@@ -3,7 +3,7 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
-import { MusicGenProvider } from './services/musicgen';
+import { getMusicGenerationManager } from '../services/music-generation/manager';
 import { AudioService } from './services/audio';
 import { SIDEKICK_SYSTEM_PROMPT } from '../shared/prompts';
 import { analyzeAudio } from './tools/analyzeAudio';
@@ -23,25 +23,39 @@ const audioService = new AudioService();
 // Define tools using Mastra format
 const generateMusic = createTool({
   id: 'generate-music',
-  description: 'Generate a music loop based on a text prompt using MusicGen',
+  description: 'Generate a music loop based on a text prompt. The system will automatically select the best available service.',
   inputSchema: z.object({
-    prompt: z.string().describe('A detailed, MusicGen-optimized prompt that includes BPM, key, and musical descriptions'),
-    duration: z.number().default(8).describe('Duration in seconds (8 is optimal for loops, max 30)'),
-    model: z.enum(['stereo-large', 'stereo-melody-large']).describe('Model to use: stereo-large for drums/bass/textures, stereo-melody-large for melodies/leads/harmonic content'),
-    inputAudio: z.string().optional().describe('Optional: URL or path to audio file for melody continuation'),
+    prompt: z.string().describe('A detailed prompt describing the music you want to generate'),
+    duration: z.number().optional().describe('Duration in seconds (defaults based on mode)'),
+    mode: z.enum(['loop', 'sample', 'inspiration']).optional().describe('Generation mode: loop (4-8s), sample (1s), inspiration (15-30s)'),
+    model: z.string().optional().describe('Optional: specific model to use (e.g., stereo-large, v4.5)'),
+    inputAudio: z.string().optional().describe('Optional: URL or path to audio file for extension/continuation'),
+    lyrics: z.string().optional().describe('Optional: lyrics for the song (if service supports it)'),
+    makeInstrumental: z.boolean().optional().describe('Optional: create instrumental version'),
   }),
   execute: async ({ context }) => {
-    const { prompt, duration = 8, model, inputAudio } = context;
-    console.log('🎵 MUSICGEN TOOL EXECUTING!!!');
-    console.log('Parameters:', { prompt, duration });
+    const { prompt, duration, mode, model, inputAudio, lyrics, makeInstrumental } = context;
+    console.log('🎵 MUSIC GENERATION TOOL EXECUTING!!!');
+    console.log('Parameters:', { prompt, duration, mode, model });
     
     try {
-      console.log('🎵 Starting MusicGen API call with model:', model);
-      const musicGenProvider = new MusicGenProvider();
-      const result = await musicGenProvider.generate(prompt, { duration, model, inputAudio });
+      const musicManager = getMusicGenerationManager();
+      const activeService = musicManager.getActiveService();
+      console.log('🎵 Using service:', activeService);
       
-      console.log('🎵 MusicGen SUCCESS!');
+      const result = await musicManager.generate({
+        prompt,
+        duration,
+        mode,
+        model,
+        extendAudio: inputAudio,
+        lyrics,
+        makeInstrumental,
+      });
+      
+      console.log('🎵 Generation SUCCESS!');
       console.log('Audio URL:', result.audioUrl);
+      console.log('Service used:', result.metadata.service);
       
       // Download and save the audio file
       const localFilePath = await audioService.downloadAndSave(result.audioUrl, prompt);
@@ -51,22 +65,24 @@ const generateMusic = createTool({
       if (mainWindow) {
         mainWindow.webContents.send('audio:generated', {
           prompt,
-          duration,
+          duration: result.duration,
           audioUrl: result.audioUrl,
           localFilePath,
+          service: result.metadata.service,
         });
       }
       
       return {
         status: 'success',
         prompt,
-        duration,
+        duration: result.duration,
         audioUrl: result.audioUrl,
         localFilePath,
-        message: `Generated ${duration}s loop and saved locally`,
+        service: result.metadata.service,
+        message: `Generated ${result.duration}s audio using ${result.metadata.service} and saved locally`,
       };
     } catch (error) {
-      console.log('🎵 MUSICGEN FAILED!');
+      console.log('🎵 GENERATION FAILED!');
       console.error('Music generation error:', error);
       return {
         status: 'error',
@@ -168,5 +184,22 @@ ipcMain.handle('musicgen:generate', async (event, { prompt, duration }) => {
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 
     };
+  }
+});
+
+// IPC handler for changing music service
+ipcMain.on('music:setService', (event, serviceId) => {
+  try {
+    console.log('Switching music service to:', serviceId);
+    const manager = getMusicGenerationManager();
+    manager.setActiveService(serviceId);
+    event.reply('music:serviceChanged', { service: serviceId, success: true });
+  } catch (error) {
+    console.error('Failed to change music service:', error);
+    event.reply('music:serviceChanged', { 
+      service: serviceId, 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    });
   }
 });

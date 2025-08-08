@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { domToPng } from 'modern-screenshot';
 
 interface DraggableAudioFileProps {
   filePath: string;
@@ -20,14 +21,21 @@ export const DraggableAudioFile: React.FC<DraggableAudioFileProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
 
-  const handleDragStart = (event: React.DragEvent<HTMLDivElement>) => {
-    // Critical: Prevent default HTML5 drag to enable native OS drag
+  const handleDragStart = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    
     setIsDragging(true);
     
-    // Start native drag operation for external applications
-    if (window.electron?.startDrag) {
+    if (dragRef.current && window.electron?.startDrag) {
+      try {
+        const dataUrl = await domToPng(dragRef.current, {
+          scale: 2,
+          backgroundColor: 'transparent'
+        });
+        window.electron.startDrag(filePath, dataUrl);
+      } catch (err) {
+        window.electron.startDrag(filePath);
+      }
+    } else if (window.electron?.startDrag) {
       window.electron.startDrag(filePath);
     }
   };
