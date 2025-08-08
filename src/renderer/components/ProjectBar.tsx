@@ -22,7 +22,7 @@ export function ProjectBar() {
         <span className="text-[var(--color-text-secondary)]">
           BPM:<input
             type="text"
-            value={project.bpm}
+            value={project.bpm || 120}
             onChange={(e) => {
               const value = e.target.value.replace(/\D/g, '');
               if (value === '' || (parseInt(value) >= 60 && parseInt(value) <= 200)) {
@@ -34,7 +34,7 @@ export function ProjectBar() {
         </span>
         <span className="text-[var(--color-text-secondary)] ml-2">
           KEY:<select
-            value={project.key}
+            value={project.key || 'C'}
             onChange={(e) => updateProject({ key: e.target.value })}
             className="bg-transparent text-[var(--color-accent)] focus:outline-none appearance-none cursor-pointer"
           >
@@ -45,7 +45,7 @@ export function ProjectBar() {
         </span>
         <span className="text-[var(--color-text-secondary)] ml-2">
           SIG:<select
-            value={project.timeSignature}
+            value={project.timeSignature || '4/4'}
             onChange={(e) => updateProject({ timeSignature: e.target.value })}
             className="bg-transparent text-[var(--color-accent)] focus:outline-none appearance-none cursor-pointer"
           >
