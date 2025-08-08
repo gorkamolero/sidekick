@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { initializeAbletonLink, cleanupAbletonLink } from './services/abletonLink';
+import { AbletonDetector } from './services/abletonDetector';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -8,6 +10,7 @@ if (started) {
 }
 
 let mainWindow: BrowserWindow | null;
+let abletonDetector: AbletonDetector | null = null;
 
 const createWindow = () => {
   // Create the browser window.
@@ -35,6 +38,13 @@ const createWindow = () => {
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools({ mode: 'detach' });
+  
+  // Initialize Ableton Link
+  initializeAbletonLink(mainWindow);
+  
+  // Start monitoring for Ableton Live
+  abletonDetector = new AbletonDetector(mainWindow);
+  abletonDetector.startMonitoring();
 };
 
 // This method will be called when Electron has finished
@@ -46,6 +56,8 @@ app.on('ready', createWindow);
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  cleanupAbletonLink();
+  abletonDetector?.stopMonitoring();
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -60,8 +72,8 @@ app.on('activate', () => {
 });
 
 // Handle native file drag for external applications (DAW drag and drop)
-ipcMain.on('ondragstart', (event, filePath: string) => {
-  console.log('🎵 Native drag started for file:', filePath);
+ipcMain.on('ondragstart', (event, { filePath, imageData }: { filePath: string; imageData?: string }) => {
+  console.log('🎵 Native drag started for file:', filePath, imageData ? 'with custom image' : '');
   
   // Ensure we have an absolute path
   const absolutePath = path.isAbsolute(filePath) 
@@ -74,19 +86,27 @@ ipcMain.on('ondragstart', (event, filePath: string) => {
     return;
   }
   
-  // Simple icon creation that was working
-  const size = 32;
-  const buffer = Buffer.alloc(size * size * 4);
-  for (let i = 0; i < size * size * 4; i += 4) {
-    buffer[i] = 138;     // R (purple)
-    buffer[i + 1] = 43;   // G
-    buffer[i + 2] = 226;  // B
-    buffer[i + 3] = 255;  // A
+  // Create icon - either from provided image or default music note
+  let icon: Electron.NativeImage;
+  
+  if (imageData) {
+    // Use the custom image from the renderer
+    icon = nativeImage.createFromDataURL(imageData);
+  } else {
+    // Fallback to simple purple square
+    const size = 32;
+    const buffer = Buffer.alloc(size * size * 4);
+    for (let i = 0; i < size * size * 4; i += 4) {
+      buffer[i] = 138;     // R (purple)
+      buffer[i + 1] = 43;   // G
+      buffer[i + 2] = 226;  // B
+      buffer[i + 3] = 255;  // A
+    }
+    icon = nativeImage.createFromBuffer(buffer, {
+      width: size,
+      height: size
+    });
   }
-  const icon = nativeImage.createFromBuffer(buffer, {
-    width: size,
-    height: size
-  });
   
   // Start the native drag operation
   try {
@@ -95,6 +115,36 @@ ipcMain.on('ondragstart', (event, filePath: string) => {
       icon: icon
     });
     console.log('✅ Native drag initiated for:', absolutePath);
+  } catch (error) {
+    console.error('❌ Failed to start drag:', error);
+  }
+});
+
+// Handle native file drag with custom image
+ipcMain.on('ondragstart-with-image', (event, { filePath, imageData }: { filePath: string; imageData: string }) => {
+  console.log('🎵 Native drag with custom image started for file:', filePath);
+  
+  // Ensure we have an absolute path
+  const absolutePath = path.isAbsolute(filePath) 
+    ? filePath 
+    : path.resolve(filePath);
+  
+  // Verify file exists
+  if (!require('fs').existsSync(absolutePath)) {
+    console.error('❌ File not found for drag:', absolutePath);
+    return;
+  }
+  
+  // Create icon from the provided image data
+  const icon = nativeImage.createFromDataURL(imageData);
+  
+  // Start the native drag operation with custom icon
+  try {
+    event.sender.startDrag({
+      file: absolutePath,
+      icon: icon
+    });
+    console.log('✅ Native drag with custom icon initiated for:', absolutePath);
   } catch (error) {
     console.error('❌ Failed to start drag:', error);
   }

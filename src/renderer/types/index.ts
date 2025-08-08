@@ -52,7 +52,33 @@ declare global {
       audio: {
         onGenerated: (callback: (event: any, data: any) => void) => () => void;
       };
-      startDrag: (filePath: string) => void;
+      startDrag: (filePath: string, imageData?: string) => void;
+      abletonLink: {
+        enable: () => Promise<boolean>;
+        disable: () => Promise<boolean>;
+        setTempo: (tempo: number) => Promise<boolean>;
+        getState: () => Promise<{
+          isEnabled: boolean;
+          isConnected: boolean;
+          tempo: number;
+          phase: number;
+          beat: number;
+          numPeers: number;
+          isPlaying: boolean;
+        }>;
+        startPlaying: (beat?: number) => Promise<boolean>;
+        stopPlaying: () => Promise<boolean>;
+        onUpdate: (callback: (state: {
+          isEnabled: boolean;
+          isConnected: boolean;
+          tempo: number;
+          phase: number;
+          beat: number;
+          numPeers: number;
+          isPlaying: boolean;
+        }) => void) => () => void;
+        onAbletonStatus: (callback: (isRunning: boolean) => void) => () => void;
+      };
     };
   }
 }
