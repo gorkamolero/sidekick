@@ -65,22 +65,4 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.send('ondragstart', { filePath, imageData });
     console.log('🔥 PRELOAD: IPC message sent');
   },
-  
-  // Ableton Link methods
-  abletonLink: {
-    enable: () => ipcRenderer.invoke('ableton-link-enable'),
-    disable: () => ipcRenderer.invoke('ableton-link-disable'),
-    setTempo: (tempo: number) => ipcRenderer.invoke('ableton-link-set-tempo', tempo),
-    getState: () => ipcRenderer.invoke('ableton-link-get-state'),
-    startPlaying: (beat?: number) => ipcRenderer.invoke('ableton-link-start-playing', beat),
-    stopPlaying: () => ipcRenderer.invoke('ableton-link-stop-playing'),
-    onUpdate: (callback: (state: any) => void) => {
-      ipcRenderer.on('ableton-link-update', (event, state) => callback(state));
-      return () => ipcRenderer.removeListener('ableton-link-update', callback as any);
-    },
-    onAbletonStatus: (callback: (isRunning: boolean) => void) => {
-      ipcRenderer.on('ableton-running-status', (_event, isRunning) => callback(isRunning));
-      return () => ipcRenderer.removeListener('ableton-running-status', callback as any);
-    },
-  },
 });

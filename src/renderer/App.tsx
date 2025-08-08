@@ -13,8 +13,6 @@ import { Archive } from "lucide-react";
 import { Generation } from "./types";
 import { StatusBar } from "./components/StatusBar";
 import { ProjectBar } from "./components/ProjectBar";
-import { AbletonLinkStatus } from "./components/AbletonLinkStatus";
-import { AbletonAlert } from "./components/AbletonAlert";
 
 const queryClient = new QueryClient();
 
@@ -70,8 +68,6 @@ function AppContent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="h-screen flex flex-col bg-[var(--color-void)] relative overflow-hidden">
-        {/* Ableton Alert - Above everything */}
-        <AbletonAlert />
         
         {/* Show pony animations only when MLP theme is active */}
         {theme === "pony" && <PonyAnimations />}
@@ -99,9 +95,6 @@ function AppContent() {
 
           {/* Project bar */}
           <ProjectBar />
-          
-          {/* Ableton Link status */}
-          <AbletonLinkStatus />
 
           {/* Conversation tabs */}
           <ConversationTabs />

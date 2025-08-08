@@ -44,7 +44,16 @@
       "Bash(sed:*)",
       "Bash(pkill:*)",
       "Bash(xxd:*)",
-      "WebFetch(domain:vercel.com)"
+      "WebFetch(domain:vercel.com)",
+      "Bash(npm search:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(git worktree:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx:*)",
+      "Bash(env)",
+      "Bash(sudo lsof:*)",
+      "WebFetch(domain:linear.app)",
+      "WebFetch(domain:ui.shadcn.com)"
     ],
     "deny": [
       "Bash(git push:*)",

@@ -1,8 +1,6 @@
 import { app, BrowserWindow, ipcMain, nativeImage, screen } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { initializeAbletonLink, cleanupAbletonLink } from './services/abletonLink';
-import { AbletonDetector } from './services/abletonDetector';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -10,7 +8,6 @@ if (started) {
 }
 
 let mainWindow: BrowserWindow | null;
-let abletonDetector: AbletonDetector | null = null;
 
 const createWindow = () => {
   // Get the primary display's work area (excludes menu bar and dock)
@@ -44,15 +41,10 @@ const createWindow = () => {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools({ mode: 'detach' });
-  
-  // Initialize Ableton Link
-  initializeAbletonLink(mainWindow);
-  
-  // Start monitoring for Ableton Live
-  abletonDetector = new AbletonDetector(mainWindow);
-  abletonDetector.startMonitoring();
+  // Open the DevTools in production mode to suppress warnings
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
+  }
 };
 
 // This method will be called when Electron has finished
@@ -64,8 +56,6 @@ app.on('ready', createWindow);
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  cleanupAbletonLink();
-  abletonDetector?.stopMonitoring();
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -125,6 +115,37 @@ ipcMain.on('ondragstart', (event, { filePath, imageData }: { filePath: string; i
     console.log('✅ Native drag initiated for:', absolutePath);
   } catch (error) {
     console.error('❌ Failed to start drag:', error);
+  }
+});
+
+// Handle get-project-info request
+ipcMain.handle('get-project-info', async () => {
+  // Return mock project info for now
+  // TODO: Integrate with actual DAW via OSC
+  return {
+    name: 'Untitled Project',
+    tempo: 120,
+    key: 'C minor',
+    timeSignature: '4/4'
+  };
+});
+
+// Handle save-audio-file request
+ipcMain.handle('save-audio-file', async (_event, buffer: ArrayBuffer, filename: string) => {
+  const fs = require('fs').promises;
+  const os = require('os');
+  
+  // Save to temp directory for now
+  const tempDir = path.join(os.tmpdir(), 'sidekick-audio');
+  
+  try {
+    await fs.mkdir(tempDir, { recursive: true });
+    const filePath = path.join(tempDir, filename);
+    await fs.writeFile(filePath, Buffer.from(buffer));
+    return filePath;
+  } catch (error) {
+    console.error('Failed to save audio file:', error);
+    throw error;
   }
 });
 
