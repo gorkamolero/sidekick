@@ -36,7 +36,10 @@
       "mcp__linear__get_issue",
       "Bash(find:*)",
       "Bash(grep:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "WebFetch(domain:docs.sunoapi.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.deviantart.com)"
     ],
     "deny": [
       "Bash(git push:*)",
