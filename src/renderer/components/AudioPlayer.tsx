@@ -140,39 +140,26 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
     const element = dragRef.current;
     if (!element) return;
     
-    // Attach native ondragstart handler (not React's)
     const handleDragStart = async (event: DragEvent) => {
       if (!localFilePath) {
-        console.warn('No local file path available');
         return;
       }
       
-      // MUST preventDefault() as per Electron docs for native file drag
       event.preventDefault();
       setIsDragging(true);
-      console.log('🎵 Native drag started for:', localFilePath);
       
-      // Try to capture the element as an image for the drag icon
       if (dragRef.current && window.electron && window.electron.startDrag) {
         try {
-          // Use modern-screenshot to capture the actual element
           const dataUrl = await domToPng(dragRef.current, {
-            scale: 2, // Higher quality
+            scale: 2,
             backgroundColor: 'transparent'
           });
-          
-          // Send the file path with the image data
           window.electron.startDrag(localFilePath, dataUrl);
         } catch (err) {
-          console.error('Failed to create drag image:', err);
-          // Fallback to regular drag without custom image
           window.electron.startDrag(localFilePath);
         }
       } else if (window.electron && window.electron.startDrag) {
         window.electron.startDrag(localFilePath);
-      } else {
-        console.error('❌ window.electron.startDrag not available!');
-      }
     };
     
     element.addEventListener('dragstart', handleDragStart);
