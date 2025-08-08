@@ -59,11 +59,6 @@ app.on('activate', () => {
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
-import './ipc';
-import './mastra';
-
 // Handle native file drag for external applications (DAW drag and drop)
 ipcMain.on('ondragstart', (event, filePath: string) => {
   console.log('🎵 Native drag started for file:', filePath);
@@ -79,20 +74,28 @@ ipcMain.on('ondragstart', (event, filePath: string) => {
     return;
   }
   
-  // Create a proper audio drag icon (32x32 recommended for better visibility)
-  // This is a base64-encoded PNG of a music note icon
-  const iconBuffer = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAKFSURBVFiFtZexaxRBFMa/N7O7d3t7l1wSL4mJRhEVRBsrC0EQLCwsxEIQBEHBykL/AEEsBAsLC0EsBBtBsBDEQhAsBLEQFAQVRUUxEiV6Se7udmfnzXtbiHu3c7cXQ+KDYXZ25vt+M2/evBkiIvxPGUutBIA9ALYDWAdgFYAygByADwDeAHgI4DaAm0T0o5UBa60FgGEAxwEcBFBqsXkOwGUAF4loIrmhKQBr7V4AFwBs+4P+5gCcJqKrC9akrrPWngJwGkC23Q4TZADglLX2dNIRAGCttUcAnEGL4BG5iTAF40dTCFOYgvHHkW3OOOdOABj+BcBasx/ABQCZuZLrbuC9h/feRfsJIfRc1zVa64WGAaC01jkA5wCMJQEOArjo0AK0dNGOWmsOAhARI2NHrLXnWvnQ58gN4P6vnt4qEZEQgrfU7JYxZhEAAGCtXQXgOYCV7aQqJJcwcOUCqq/u/wncwKbt2Pbofsr5LADnm+vWmv0Axn9FfvfyLayfO9Y1efPr1cJfAeBBFHUHQkgCMAwgGx8vfHzDlv2jGFg3hEGVQ7ZnObKqgIzMQAoBIQWYCR6BhIBDgK8/4YIaaoeG8eV1NJJdGKP9AE52O6uhmV0UrKhC+jUIgCLylCTvTYFCAOhJ/pzZRcFOQGjON9YvBGBdS+OuSaYRAHpdCUkATXr/LHQnzaBzJQxgGsAgOtdgM/kfaBJAo6SN0ARwhYguRXcVvD2AG9G9XaIzpwsB6Fw7ANzshgAAiGg8nHOzTsBvJnYVx0grbcOx1OoAgCfR/0gA57EY+B0S8LQqy+X+hLEsLQFYH00kPzrQxBMA94jobP3v8F0AIiJGNOsuRGu0VrJaaxezRHQG/1k/AcBTFMUBquHeAAAAAElFTkSuQmCC',
-    'base64'
-  );
-  const icon = nativeImage.createFromBuffer(iconBuffer);
-  
-  // Start the native drag operation
-  // This enables dragging to external applications like Ableton Live
-  event.sender.startDrag({
-    file: absolutePath,
-    icon: icon.resize({ width: 32, height: 32 }) // Ensure proper size
+  // Simple icon creation that was working
+  const size = 32;
+  const buffer = Buffer.alloc(size * size * 4);
+  for (let i = 0; i < size * size * 4; i += 4) {
+    buffer[i] = 138;     // R (purple)
+    buffer[i + 1] = 43;   // G
+    buffer[i + 2] = 226;  // B
+    buffer[i + 3] = 255;  // A
+  }
+  const icon = nativeImage.createFromBuffer(buffer, {
+    width: size,
+    height: size
   });
   
-  console.log('✅ Native drag initiated for:', absolutePath);
+  // Start the native drag operation
+  try {
+    event.sender.startDrag({
+      file: absolutePath,
+      icon: icon
+    });
+    console.log('✅ Native drag initiated for:', absolutePath);
+  } catch (error) {
+    console.error('❌ Failed to start drag:', error);
+  }
 });

@@ -52,6 +52,7 @@ declare global {
       audio: {
         onGenerated: (callback: (event: any, data: any) => void) => () => void;
       };
+      startDrag: (filePath: string) => void;
     };
   }
 }

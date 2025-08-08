@@ -61,6 +61,8 @@ contextBridge.exposeInMainWorld('electron', {
   
   // Native file drag for external apps
   startDrag: (filePath: string) => {
+    console.log('🔥 PRELOAD: startDrag called with:', filePath);
     ipcRenderer.send('ondragstart', filePath);
+    console.log('🔥 PRELOAD: IPC message sent');
   },
 });

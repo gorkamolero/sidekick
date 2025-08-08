@@ -140,22 +140,32 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
     if (!element) return;
     
     // Attach native ondragstart handler (not React's)
-    element.ondragstart = (event) => {
+    const handleDragStart = (event: DragEvent) => {
       if (!localFilePath) {
         console.warn('No local file path available');
         return;
       }
       
-      event.preventDefault(); // MUST prevent default for native drag
+      // MUST preventDefault() as per Electron docs
+      event.preventDefault();
+      setIsDragging(true);
       console.log('🎵 Native drag started for:', localFilePath);
       
       // Call Electron's startDrag via IPC
-      (window as any).electron.startDrag(localFilePath);
+      if (window.electron && window.electron.startDrag) {
+        window.electron.startDrag(localFilePath);
+      } else {
+        console.error('❌ window.electron.startDrag not available!');
+      }
     };
+    
+    element.addEventListener('dragstart', handleDragStart);
+    element.addEventListener('dragend', () => setIsDragging(false));
     
     return () => {
       if (element) {
-        element.ondragstart = null;
+        element.removeEventListener('dragstart', handleDragStart);
+        element.removeEventListener('dragend', () => setIsDragging(false));
       }
     };
   }, [localFilePath]);
@@ -163,20 +173,20 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
   return (
     <div 
       ref={dragRef}
-      className="inline-flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-text-dim)] rounded px-3 py-2 transition-all hover:border-[var(--color-accent)] cursor-move"
+      className="flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-text-dim)] rounded px-2 py-1.5 transition-all hover:border-[var(--color-accent)] cursor-move w-full max-w-full"
       draggable={true}
       title="Drag to Ableton Live"
     >
-      <GripVertical size={14} className="text-[var(--color-text-dim)]" />
+      <GripVertical size={12} className="text-[var(--color-text-dim)] flex-shrink-0" />
       
       <button
         onClick={togglePlayback}
-        className="w-8 h-8 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-full flex items-center justify-center text-black transition-colors"
+        className="w-6 h-6 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-full flex items-center justify-center text-black transition-colors flex-shrink-0"
       >
-        {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+        {isPlaying ? <Pause size={12} /> : <Play size={12} />}
       </button>
 
-      <div className="w-32">
+      <div className="flex-1 min-w-0 max-w-[120px]">
         <div className="bg-[var(--color-void)] h-1 rounded-full">
           <div 
             className="bg-[var(--color-accent)] h-1 rounded-full transition-all duration-100"
@@ -185,28 +195,28 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
         </div>
       </div>
       
-      <span className="text-xs text-[var(--color-text-secondary)] font-mono">
+      <span className="text-[10px] text-[var(--color-text-secondary)] font-mono flex-shrink-0">
         {formatTime(currentTime)}/{formatTime(duration)}
       </span>
 
       <button
         onClick={toggleLoop}
-        className={`w-8 h-8 hover:bg-[var(--color-surface)] rounded flex items-center justify-center transition-colors ${
+        className={`w-6 h-6 hover:bg-[var(--color-surface)] rounded flex items-center justify-center transition-colors flex-shrink-0 ${
           isLooping 
             ? 'text-[var(--color-accent)]' 
             : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]'
         }`}
         title={isLooping ? 'Loop enabled' : 'Loop disabled'}
       >
-        <Repeat size={14} />
+        <Repeat size={12} />
       </button>
 
       <button
         onClick={handleDownload}
-        className="w-8 h-8 hover:bg-[var(--color-surface)] rounded flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
+        className="w-6 h-6 hover:bg-[var(--color-surface)] rounded flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
         title="Download"
       >
-        <Download size={14} />
+        <Download size={12} />
       </button>
     </div>
   );
