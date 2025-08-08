@@ -8,7 +8,7 @@ export function useAgent() {
   const abortControllerRef = useRef<AbortController | null>(null);
   
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, metadata?: { mode?: string }) => {
     if (!content.trim() || isProcessing) return;
 
     // Cancel any existing request
@@ -75,6 +75,7 @@ export function useAgent() {
       // Use Mastra through IPC
       const result = await window.electron.agent.streamMessage(
         messages,
+        metadata,
         (chunk) => {
           if (chunk.type === 'text' && chunk.text) {
             fullContent += chunk.text;

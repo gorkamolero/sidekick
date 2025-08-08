@@ -23,11 +23,9 @@ export function GenerationPanel() {
     const message = prompt.trim();
     if (!message || isProcessing) return;
     
-    const enhancedMessage = getModeInstructions(mode, message);
-    
     setPrompt('');
     
-    await sendMessage(enhancedMessage);
+    await sendMessage(message, { mode });
   };
 
   const handleAudioFile = async (file: File) => {

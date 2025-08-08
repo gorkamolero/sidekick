@@ -10,7 +10,7 @@ contextBridge.exposeInMainWorld('electron', {
   agent: {
     sendMessage: (messages: any[]) => 
       ipcRenderer.invoke('agent:sendMessage', { messages }),
-    streamMessage: async (messages: any[], onChunk: (chunk: any) => void) => {
+    streamMessage: async (messages: any[], metadata: any, onChunk: (chunk: any) => void) => {
       // Remove any existing listeners first to prevent duplicates
       ipcRenderer.removeAllListeners('agent:streamChunk');
       
@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.on('agent:streamChunk', listener);
       
       // Start streaming
-      const result = await ipcRenderer.invoke('agent:streamMessage', { messages });
+      const result = await ipcRenderer.invoke('agent:streamMessage', { messages, metadata });
       
       return result;
     },

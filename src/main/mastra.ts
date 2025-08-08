@@ -33,10 +33,11 @@ const generateMusic = createTool({
     lyrics: z.string().optional().describe('Optional: lyrics for the song (if service supports it)'),
     makeInstrumental: z.boolean().optional().describe('Optional: create instrumental version'),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context, mastra }) => {
     const { prompt, duration, mode, model, inputAudio, lyrics, makeInstrumental } = context;
     console.log('🎵 MUSIC GENERATION TOOL EXECUTING!!!');
     console.log('Parameters:', { prompt, duration, mode, model });
+    console.log('Agent provided duration:', duration);
     
     try {
       const musicManager = getMusicGenerationManager();
@@ -124,9 +125,33 @@ const agent = new Agent({
 });
 
 // IPC handlers for renderer communication
-ipcMain.handle('agent:streamMessage', async (event, { messages }) => {
+ipcMain.handle('agent:streamMessage', async (event, { messages, metadata }) => {
   try {
     console.log('🤖 Mastra Agent streaming with messages:', messages);
+    console.log('📝 Metadata:', metadata);
+    
+    // Add mode context to the agent's system message if mode is provided
+    if (metadata?.mode) {
+      const modeInstructions = {
+        loop: `The user has selected LOOP mode. When calling generateMusic:
+- Set duration to 4-8 seconds
+- Ensure the prompt describes a seamless, repeatable pattern
+- Focus on consistent energy and smooth loop points`,
+        sample: `The user has selected SAMPLE mode. When calling generateMusic:
+- Set duration to 1 second
+- Focus on single hits, one-shots, or short samples
+- Emphasize impact and transient design`,
+        inspiration: `The user has selected INSPIRATION mode. When calling generateMusic:
+- Set duration to 15-30 seconds
+- Allow for musical development and progression
+- Include variations and creative exploration`
+      };
+      
+      messages.unshift({
+        role: 'system',
+        content: modeInstructions[metadata.mode]
+      });
+    }
     
     // Use the Mastra agent's stream method
     const result = await agent.stream(messages);
