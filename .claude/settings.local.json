@@ -39,7 +39,8 @@
       "Bash(tree:*)",
       "WebFetch(domain:docs.sunoapi.org)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:www.deviantart.com)"
+      "WebFetch(domain:www.deviantart.com)",
+      "Bash(npm rebuild:*)"
     ],
     "deny": [
       "Bash(git push:*)",
