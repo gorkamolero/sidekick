@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Terminal, Music, Send } from 'lucide-react';
+import { Terminal, Ear, Send } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useAgent } from '../hooks/useAgent';
 import { AudioDropZone } from './AudioDropZone';
 import { analyzeAudioFile } from '../services/audioAnalysisService';
-import { ModeSelector, GenerationMode } from './GenerationPanel/ModeSelector';
+import { GenerationMode } from './GenerationPanel/ModeSelector';
+import { ExpandableModeSelector } from './GenerationPanel/ExpandableModeSelector';
 import { ProjectInfoDisplay } from './GenerationPanel/ProjectInfoDisplay';
 import { PromptInput } from './GenerationPanel/PromptInput';
 import { ExecuteButton } from './GenerationPanel/ExecuteButton';
@@ -74,12 +75,8 @@ Would you like me to generate a complementary loop based on these characteristic
   };
 
   return (
-    <div className="border-t border-[var(--color-text-dim)]">
+    <div>
       <div className="p-3">
-        {/* Mode selector buttons - at the top */}
-        <div className="mb-3">
-          <ModeSelector mode={mode} onModeChange={setMode} />
-        </div>
         
         {showAudioDrop && (
           <div className="mb-3">
@@ -97,13 +94,14 @@ Would you like me to generate a complementary loop based on these characteristic
             onSubmit={handleSubmit}
             isProcessing={isProcessing}
           />
-          <div className="absolute right-2 bottom-2 flex items-center gap-1">
+          <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
+            <ExpandableModeSelector mode={mode} onModeChange={setMode} />
             <button
               onClick={() => setShowAudioDrop(!showAudioDrop)}
               className="p-1.5 rounded hover:bg-[var(--color-surface)] transition-colors"
-              title="Analyze audio file"
+              title="Listen to audio file"
             >
-              <Music className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]" />
+              <Ear className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]" />
             </button>
             <button
               onClick={handleSubmit}
