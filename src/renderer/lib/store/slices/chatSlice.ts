@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { ChatMessage, Conversation } from '../../types';
+import { ChatMessage, Conversation } from '../../types/index';
 import { ConversationStorage, conversationDB } from '../../storage';
 import { TabStorage } from '../../storage/tabStorage';
 

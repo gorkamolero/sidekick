@@ -87,7 +87,7 @@ export class MusicGenProvider {
       };
     } catch (error) {
       console.error('MusicGen generation failed:', error);
-      throw new Error(`Failed to generate audio: ${error.message}`);
+      throw new Error(`Failed to generate audio: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

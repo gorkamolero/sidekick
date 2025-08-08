@@ -40,7 +40,11 @@
       "WebFetch(domain:docs.sunoapi.org)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:www.deviantart.com)",
-      "Bash(npm rebuild:*)"
+      "Bash(npm rebuild:*)",
+      "Bash(sed:*)",
+      "Bash(pkill:*)",
+      "Bash(xxd:*)",
+      "WebFetch(domain:vercel.com)"
     ],
     "deny": [
       "Bash(git push:*)",

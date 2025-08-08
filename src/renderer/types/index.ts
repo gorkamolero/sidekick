@@ -52,6 +52,12 @@ declare global {
       audio: {
         onGenerated: (callback: (event: any, data: any) => void) => () => void;
       };
+      ipcRenderer: {
+        on: (channel: string, callback: (event: any, ...args: any[]) => void) => void;
+        once: (channel: string, callback: (event: any, ...args: any[]) => void) => void;
+        send: (channel: string, ...args: any[]) => void;
+        removeListener: (channel: string, callback: (event: any, ...args: any[]) => void) => void;
+      };
       startDrag: (filePath: string, imageData?: string) => void;
       abletonLink: {
         enable: () => Promise<boolean>;

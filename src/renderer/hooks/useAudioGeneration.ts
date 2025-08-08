@@ -1,10 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { useStore } from '../lib/store';
-import { MusicGenProvider } from '../lib/api/providers';
+import { MusicProvider } from '../lib/types';
 
 export function useAudioGeneration() {
   const { addGeneration, currentProject } = useStore();
-  const provider = new MusicGenProvider();
+  // TODO: Initialize actual music provider based on user selection
+  const provider = null as any; // Placeholder until provider is selected
 
   return useMutation({
     mutationFn: async (prompt: string) => {

@@ -160,6 +160,7 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
         }
       } else if (window.electron && window.electron.startDrag) {
         window.electron.startDrag(localFilePath);
+      }
     };
     
     element.addEventListener('dragstart', handleDragStart);

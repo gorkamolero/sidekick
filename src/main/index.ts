@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage, screen } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { initializeAbletonLink, cleanupAbletonLink } from './services/abletonLink';
@@ -13,12 +13,20 @@ let mainWindow: BrowserWindow | null;
 let abletonDetector: AbletonDetector | null = null;
 
 const createWindow = () => {
+  // Get the primary display's work area (excludes menu bar and dock)
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { workAreaSize, bounds } = primaryDisplay;
+  
+  // Position window on the right side of the screen
+  const windowWidth = 400;
+  const xPosition = bounds.x + workAreaSize.width - windowWidth;
+  
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 400,
-    height: 800,
-    x: 0,
-    y: 0,
+    width: windowWidth,
+    height: workAreaSize.height, // Full height of work area
+    x: xPosition, // Right side of screen
+    y: bounds.y,
     alwaysOnTop: true,
     frame: true,
     resizable: true,

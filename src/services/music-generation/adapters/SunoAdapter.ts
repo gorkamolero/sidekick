@@ -84,7 +84,7 @@ export class SunoAdapter implements MusicGenerationService {
       };
     } catch (error) {
       console.error('Suno generation failed:', error);
-      throw new Error(`Suno generation failed: ${error.message}`);
+      throw new Error(`Suno generation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

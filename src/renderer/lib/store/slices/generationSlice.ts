@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { Generation, ProjectInfo } from '../../types';
+import { Generation, ProjectInfo } from '../../types/index';
 
 export interface GenerationSlice {
   generations: Generation[];

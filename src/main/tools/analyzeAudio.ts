@@ -56,7 +56,7 @@ export const analyzeAudio = createTool({
         // Set up one-time listener for response
         const responseChannel = `audio:analysis:response:${Date.now()}`;
         
-        mainWindow.webContents.once(responseChannel, (event, result) => {
+        mainWindow.webContents.once(responseChannel, (_event: any, result: any) => {
           if (result.error) {
             reject(new Error(result.error));
           } else {
@@ -80,8 +80,8 @@ export const analyzeAudio = createTool({
       return {
         status: 'success',
         fileName,
-        ...analysis,
-        message: `Analyzed ${fileName || 'audio'}: ${analysis.bpm} BPM, ${analysis.key}, ${analysis.instruments.length} instruments detected`,
+        ...(analysis as any),
+        message: `Analyzed ${fileName || 'audio'}: ${(analysis as any).bpm} BPM, ${(analysis as any).key}, ${(analysis as any).instruments?.length || 0} instruments detected`,
       };
     } catch (error) {
       console.error('Audio analysis error:', error);

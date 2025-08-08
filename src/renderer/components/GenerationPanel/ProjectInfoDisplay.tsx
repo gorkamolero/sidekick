@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ProjectInfo } from '../../types';
+import { useStore } from '../../lib/store';
 
 interface ProjectInfoDisplayProps {
   project: ProjectInfo;
@@ -8,12 +9,18 @@ interface ProjectInfoDisplayProps {
 
 export function ProjectInfoDisplay({ project, onUpdateProject }: ProjectInfoDisplayProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const { linkState } = useStore();
+  
+  // Use Link tempo if connected, otherwise use project tempo
+  const displayBpm = linkState.isConnected ? Math.round(linkState.tempo) : project.bpm;
 
   return (
     <div className="flex gap-6 mt-3 text-xs text-[var(--color-text-secondary)] font-mono">
       <span className="flex items-center gap-1">
-        <span className="text-[var(--color-text-dim)]">BPM:</span>
-        {isEditing ? (
+        <span className="text-[var(--color-text-dim)]">
+          BPM{linkState.isConnected && ' (Link)'}:
+        </span>
+        {isEditing && !linkState.isConnected ? (
           <input
             type="number"
             value={project.bpm}
@@ -24,10 +31,10 @@ export function ProjectInfoDisplay({ project, onUpdateProject }: ProjectInfoDisp
           />
         ) : (
           <span 
-            className="text-[var(--color-accent)] cursor-pointer hover:underline"
-            onClick={() => setIsEditing(true)}
+            className={`text-[var(--color-accent)] ${!linkState.isConnected ? 'cursor-pointer hover:underline' : ''}`}
+            onClick={() => !linkState.isConnected && setIsEditing(true)}
           >
-            {project.bpm}
+            {displayBpm}
           </span>
         )}
       </span>

@@ -11,7 +11,7 @@ export function setupAudioAnalysisListener() {
     return;
   }
   
-  window.electron.ipcRenderer.on('audio:analyze', async (event, { audioData, fileName, responseChannel }) => {
+  window.electron.ipcRenderer.on('audio:analyze', async (event: any, { audioData, fileName, responseChannel }: { audioData: string; fileName: string; responseChannel: string }) => {
     try {
       console.log('Received audio analysis request:', fileName);
       
@@ -27,13 +27,13 @@ export function setupAudioAnalysisListener() {
       const analysis = await audioAnalyzer.analyze(arrayBuffer);
       
       // Send response back
-      window.electron?.ipcRenderer.send(responseChannel, {
+      window.electron?.ipcRenderer?.send(responseChannel, {
         analysis,
         error: null
       });
     } catch (error) {
       console.error('Audio analysis failed:', error);
-      window.electron?.ipcRenderer.send(responseChannel, {
+      window.electron?.ipcRenderer?.send(responseChannel, {
         analysis: null,
         error: error instanceof Error ? error.message : 'Analysis failed'
       });

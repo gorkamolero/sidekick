@@ -46,7 +46,7 @@ export const MusicServiceSelector: React.FC = () => {
     setIsOpen(false);
 
     // Notify the music generation manager
-    window.electron?.ipcRenderer.send('music:setService', serviceId);
+    window.electron?.ipcRenderer?.send('music:setService', serviceId);
   };
 
   const activeServiceData = services.find(s => s.id === activeService);

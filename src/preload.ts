@@ -76,11 +76,11 @@ contextBridge.exposeInMainWorld('electron', {
     stopPlaying: () => ipcRenderer.invoke('ableton-link-stop-playing'),
     onUpdate: (callback: (state: any) => void) => {
       ipcRenderer.on('ableton-link-update', (event, state) => callback(state));
-      return () => ipcRenderer.removeListener('ableton-link-update', callback);
+      return () => ipcRenderer.removeListener('ableton-link-update', callback as any);
     },
     onAbletonStatus: (callback: (isRunning: boolean) => void) => {
-      ipcRenderer.on('ableton-running-status', (event, isRunning) => callback(isRunning));
-      return () => ipcRenderer.removeListener('ableton-running-status', callback);
+      ipcRenderer.on('ableton-running-status', (_event, isRunning) => callback(isRunning));
+      return () => ipcRenderer.removeListener('ableton-running-status', callback as any);
     },
   },
 });
