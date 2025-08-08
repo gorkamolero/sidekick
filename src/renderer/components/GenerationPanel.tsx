@@ -23,13 +23,10 @@ export function GenerationPanel() {
     const message = prompt.trim();
     if (!message || isProcessing) return;
     
-    // Add mode-specific system instructions
     const enhancedMessage = getModeInstructions(mode, message);
     
-    // Clear input immediately for better UX
     setPrompt('');
     
-    // Send message asynchronously
     await sendMessage(enhancedMessage);
   };
 
@@ -47,7 +44,7 @@ export function GenerationPanel() {
 ⚡ Energy: ${Math.round(analysis.energy * 100)}%
 🕺 Danceability: ${Math.round(analysis.danceability * 100)}%
 🎼 Style: ${analysis.style.join(', ')}
-🎤 Instruments: ${analysis.instruments.map(i => i.label).join(', ')}
+🎤 Instruments: ${analysis.instruments.map((i: any) => i.label).join(', ')}
 
 Would you like me to generate a complementary loop based on these characteristics?`;
       

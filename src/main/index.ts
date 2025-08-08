@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, nativeImage, screen } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import './mastra';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {

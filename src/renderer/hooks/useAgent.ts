@@ -6,6 +6,7 @@ export function useAgent() {
   const { addMessage, updateMessage, currentConversation, currentProject } = useStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isProcessing) return;
@@ -49,10 +50,10 @@ export function useAgent() {
     addMessage(assistantMessage);
 
     try {
-      // Build conversation history WITHOUT the empty assistant message we just added
+      // Build conversation history WITHOUT the messages we just added
       const previousMessages = currentConversation?.messages
-        .filter(m => m.role !== 'system' && m.id !== assistantMessage.id) // Exclude the empty assistant message
-        .map(m => ({ role: m.role, content: m.content })) || [];
+        .filter((m: any) => m.role !== 'system' && m.id !== assistantMessage.id && m.id !== userMessage.id)
+        .map((m: any) => ({ role: m.role, content: m.content })) || [];
       
       // Add the new user message
       const messages = [

@@ -25,6 +25,26 @@ contextBridge.exposeInMainWorld('electron', {
     },
   },
   
+  // Chat methods for Vercel AI SDK
+  chat: {
+    streamChat: async (messages: any[], onChunk: (chunk: any) => void) => {
+      // Remove any existing listeners first to prevent duplicates
+      ipcRenderer.removeAllListeners('chat:streamChunk');
+      
+      // Set up listener for stream chunks
+      const listener = (event: any, chunk: any) => onChunk(chunk);
+      ipcRenderer.on('chat:streamChunk', listener);
+      
+      // Start streaming
+      const result = await ipcRenderer.invoke('chat:streamMessage', { messages });
+      
+      // Clean up listener when done
+      ipcRenderer.removeAllListeners('chat:streamChunk');
+      
+      return result;
+    },
+  },
+  
   // MusicGen methods
   musicgen: {
     generate: (params: { prompt: string; duration?: number }) =>
