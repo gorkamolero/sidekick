@@ -16,7 +16,7 @@ vi.mock('../../renderer/services/essentiaService', () => ({
 import { essentiaService } from '../../renderer/services/essentiaService';
 
 // Create a mock dark techno audio buffer at 132 BPM
-function generateDarkTechnoAudio(bpm: number = 132, duration: number = 8): Float32Array {
+function generateDarkTechnoAudio(bpm = 132, duration = 8): Float32Array {
   const sampleRate = 44100;
   const samples = Math.floor(duration * sampleRate);
   const buffer = new Float32Array(samples);

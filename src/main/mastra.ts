@@ -36,8 +36,14 @@ const generateMusic = createTool({
   execute: async ({ context, mastra }) => {
     const { prompt, duration, mode, model, inputAudio, lyrics, makeInstrumental } = context;
     console.log('🎵 MUSIC GENERATION TOOL EXECUTING!!!');
-    console.log('Parameters:', { prompt, duration, mode, model });
+    console.log('Parameters:', { prompt, duration, mode, model, inputAudio, lyrics, makeInstrumental });
     console.log('Agent provided duration:', duration);
+    
+    // Debug log to see if inputAudio is being passed
+    if (inputAudio) {
+      console.warn('⚠️ WARNING: inputAudio was provided:', inputAudio);
+      console.warn('This will extend/continue from previous audio!');
+    }
     
     try {
       const musicManager = getMusicGenerationManager();

@@ -1,5 +1,6 @@
 import { Loader2, Music, CheckCircle, AlertCircle, Wand2 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { AudioPlayer } from "./AudioPlayer";
 
 interface ToolCallDisplayProps {
   toolCalls?: any[];
@@ -100,22 +101,38 @@ export function ToolCallDisplay({
               )}
 
               {toolCall.result && isComplete && (
-                <div className="mt-1 text-[10px] text-green-600">
-                  {toolCall.result.status === "success" ? (
-                    <div>
-                      ✓ {toolCall.result.message || "Completed successfully"}
-                      {toolCall.result.service && (
-                        <span className="ml-1 text-[var(--color-text-dim)]">
-                          via {toolCall.result.service}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-red-500">
-                      ✗ {toolCall.result.message || "Failed"}
+                <>
+                  <div className="mt-1 text-[10px] text-green-600">
+                    {toolCall.result.status === "success" ? (
+                      <div>
+                        ✓ {toolCall.result.message || "Completed successfully"}
+                        {toolCall.result.service && (
+                          <span className="ml-1 text-[var(--color-text-dim)]">
+                            via {toolCall.result.service}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-red-500">
+                        ✗ {toolCall.result.message || "Failed"}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Show AudioPlayer for successful music generation */}
+                  {toolCall.result.status === "success" && 
+                   (toolCall.toolName === "generate-music" || toolCall.toolName === "generateMusic") &&
+                   toolCall.result.audioUrl && (
+                    <div className="mt-2">
+                      <AudioPlayer
+                        audioUrl={toolCall.result.audioUrl}
+                        localFilePath={toolCall.result.localFilePath}
+                        prompt={toolCall.result.prompt || toolCall.args?.prompt || ""}
+                        duration={toolCall.result.duration || 8}
+                      />
                     </div>
                   )}
-                </div>
+                </>
               )}
             </div>
           </div>

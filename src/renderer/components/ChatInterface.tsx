@@ -43,7 +43,7 @@ export function ChatInterface() {
               message === displayMessages[displayMessages.length - 1] &&
               message.role === "assistant";
             const showLoader =
-              message.isStreaming && isLastAssistantMessage && !message.content;
+              message.isStreaming && isLastAssistantMessage && !message.content && !message.toolCalls;
 
             return (
               <motion.div
@@ -79,17 +79,23 @@ export function ChatInterface() {
                       {new Date().toTimeString().slice(0, 8)}
                     </div>
 
-                    {showLoader ? (
-                      <Loader className="inline-block" />
-                    ) : (
-                      <>
-                        <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
-                          {message.content}
-                        </Response>
-                        {message.role === "assistant" && message.toolCalls && (
-                          <ToolCallDisplay toolCalls={message.toolCalls} />
-                        )}
-                      </>
+                    {showLoader && (
+                      <div className="flex items-center gap-2 text-[var(--color-text-dim)]">
+                        <Loader className="inline-block" />
+                        <span className="text-[10px] font-mono">Thinking...</span>
+                      </div>
+                    )}
+                    
+                    {/* Always show content if available */}
+                    {message.content && (
+                      <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                        {message.content}
+                      </Response>
+                    )}
+                    
+                    {/* Always show tool calls if available */}
+                    {message.role === "assistant" && message.toolCalls && (
+                      <ToolCallDisplay toolCalls={message.toolCalls} />
                     )}
                   </MessageContent>
                 </Message>
