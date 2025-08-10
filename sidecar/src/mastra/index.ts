@@ -9,7 +9,7 @@ import { agent } from "../agent";
 globalThis.___MASTRA_TELEMETRY___ = true;
 
 // Load environment variables
-dotenv.config({ path: ".env" });
+dotenv.config({ path: ".env", debug: false });
 
 export const mastra = new Mastra({
   agents: [agent],

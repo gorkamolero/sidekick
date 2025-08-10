@@ -58,6 +58,20 @@ export const tauriAPI = {
     });
   },
 
+  // Listen for global shortcut to create new tab
+  async onNewTabShortcut(callback: () => void) {
+    return await listen('new-tab-shortcut', () => {
+      callback();
+    });
+  },
+
+  // Listen for global shortcut to close current tab
+  async onCloseTabShortcut(callback: () => void) {
+    return await listen('close-tab-shortcut', () => {
+      callback();
+    });
+  },
+
   // Note: Agent functionality uses AI SDK directly in hooks, no IPC needed
 };
 

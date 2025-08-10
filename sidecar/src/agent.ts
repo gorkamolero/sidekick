@@ -7,11 +7,8 @@ import { AudioService } from './services/audio';
 import { SIDEKICK_SYSTEM_PROMPT } from './prompts';
 import { analyzeAudioStreaming } from './tools/analyzeAudioStreaming';
 
-// Load environment variables from multiple possible locations
-dotenv.config({ path: '.env' });
-dotenv.config({ path: '../.env' });
-dotenv.config({ path: '../../.env' });
-dotenv.config({ path: '../../../.env' });
+// Load environment variables
+dotenv.config({ path: '.env', debug: false });
 
 // Create OpenRouter model
 const openrouter = createOpenRouter({

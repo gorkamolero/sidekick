@@ -105,15 +105,23 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
     }),
     
   createNewConversation: () => {
-    const newConversation: Conversation = {
-      id: crypto.randomUUID(),
-      messages: [],
-      title: 'New Conversation',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
     set((state) => {
+      // Check if current conversation is empty
+      if (state.currentConversation && state.currentConversation.messages.length === 0) {
+        // Don't create a new conversation, just focus the existing empty one
+        return {
+          shouldFocusPrompt: true,
+        };
+      }
+      
+      const newConversation: Conversation = {
+        id: crypto.randomUUID(),
+        messages: [],
+        title: 'New Conversation',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
       const updatedConversations = [newConversation, ...state.conversations];
       const newTabIds = [...state.openTabIds.filter(id => id !== newConversation.id).slice(0, 9), newConversation.id];
       

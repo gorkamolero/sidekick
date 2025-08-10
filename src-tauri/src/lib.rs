@@ -1,6 +1,7 @@
 use std::fs;
-use tauri::Manager;
+use tauri::{Manager, Emitter};
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 use serde_json::Value;
 
 #[tauri::command]
@@ -98,19 +99,44 @@ async fn call_sidecar_agent(messages: Vec<Value>, metadata: Option<Value>) -> Re
     Ok(text)
 }
 
+#[tauri::command]
+async fn create_new_tab() -> Result<(), String> {
+    // This command will be called when the shortcut is pressed
+    // The actual logic will be handled in the frontend
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub fn run() -> Result<(), Box<dyn std::error::Error>> {
   tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_drag::init())
+    .plugin(
+      tauri_plugin_global_shortcut::Builder::new()
+        .with_shortcuts([
+          if cfg!(target_os = "macos") { "cmd+t" } else { "ctrl+t" },
+          if cfg!(target_os = "macos") { "cmd+w" } else { "ctrl+w" }
+        ])?
+        .with_handler(|app, shortcut, event| {
+          if event.state == ShortcutState::Pressed {
+            if shortcut.matches(Modifiers::SUPER, Code::KeyT) || shortcut.matches(Modifiers::CONTROL, Code::KeyT) {
+              let _ = app.emit("new-tab-shortcut", ());
+            } else if shortcut.matches(Modifiers::SUPER, Code::KeyW) || shortcut.matches(Modifiers::CONTROL, Code::KeyW) {
+              let _ = app.emit("close-tab-shortcut", ());
+            }
+          }
+        })
+        .build()
+    )
     .invoke_handler(tauri::generate_handler![
         save_audio_file,
         get_project_info,
         get_temp_audio_path,
         start_sidecar,
-        call_sidecar_agent
+        call_sidecar_agent,
+        create_new_tab
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -137,11 +163,11 @@ pub fn run() {
         // window.set_position(tauri::LogicalPosition::new((screen_width - 400) as f64, 0.0)).unwrap();
       }
       
-      // Note: In development, manually run `cd sidecar && npm run dev` 
-      // to start the Mastra server before running the Tauri app
       
       Ok(())
     })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
+  
+  Ok(())
 }

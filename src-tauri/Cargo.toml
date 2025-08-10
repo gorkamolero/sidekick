@@ -27,6 +27,7 @@ tauri-plugin-fs = "2.0.0-rc"
 tauri-plugin-dialog = "2.0.0-rc"
 tauri-plugin-shell = "2.0.0-rc"
 tauri-plugin-drag = "2.1"
+tauri-plugin-global-shortcut = "2.0.0-rc"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "stream"] }
 futures-util = "0.3"

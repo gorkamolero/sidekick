@@ -27,6 +27,10 @@ function AppContent() {
     setActiveView,
     addGeneration,
     setAttachedFile,
+    createNewConversation,
+    closeTab,
+    currentConversation,
+    openTabIds,
   } = useStore();
   const { theme } = useTheme();
   const agentState = useAgent();
@@ -44,6 +48,34 @@ function AppContent() {
       .catch((err) => {
         console.error("Error getting project info:", err);
       });
+
+    // Listen for global shortcuts
+    const setupEventListeners = async () => {
+      const unsubscribeNewTab = await tauriAPI.onNewTabShortcut(() => {
+        console.log("New tab shortcut pressed");
+        createNewConversation();
+      });
+
+      const unsubscribeCloseTab = await tauriAPI.onCloseTabShortcut(() => {
+        console.log("Close tab shortcut pressed");
+        if (currentConversation) {
+          if (openTabIds.length === 1) {
+            createNewConversation();
+          }
+          closeTab(currentConversation.id);
+        }
+      });
+
+      return () => {
+        unsubscribeNewTab();
+        unsubscribeCloseTab();
+      };
+    };
+
+    setupEventListeners().then((cleanup) => {
+      // Store cleanup function for later use
+      return cleanup;
+    });
 
     // Listen for audio generation events
     // TODO: Implement audio generation event listener with Tauri
@@ -69,7 +101,7 @@ function AppContent() {
     // return () => {
     //   unsubscribe();
     // };
-  }, [setProject, initializeStore, addGeneration]);
+  }, [setProject, initializeStore, addGeneration, createNewConversation, closeTab, currentConversation, openTabIds]);
 
   const handleFileDrop = async (file: File) => {
     console.log("🎯 handleFileDrop called with file:", file);
