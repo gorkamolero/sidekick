@@ -1,0 +1,50 @@
+{
+  "name": "sidecar",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:ts": "tsc",
+    "build:bun": "bun build ./src/index.ts --compile --target=bun-darwin-arm64 --outfile ../src-tauri/binaries/sidecar-aarch64-apple-darwin && bun build ./src/index.ts --compile --target=bun-darwin-x64 --outfile ../src-tauri/binaries/sidecar-x86_64-apple-darwin",
+    "build": "npm run build:bun",
+    "dev": "mastra dev"
+  },
+  "pkg": {
+    "targets": [
+      "node20-macos-arm64",
+      "node20-macos-x64",
+      "node20-windows-x64",
+      "node20-linux-x64"
+    ],
+    "outputPath": "../src-tauri/binaries",
+    "assets": [
+      "node_modules/@mastra/**/*",
+      "node_modules/@openrouter/**/*",
+      "node_modules/ai/**/*"
+    ],
+    "scripts": [
+      "node_modules/@mastra/**/*.js",
+      "node_modules/@openrouter/**/*.js",
+      "node_modules/ai/**/*.js"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "@yao-pkg/pkg": "^6.6.0",
+    "concurrently": "^9.2.0",
+    "esbuild": "^0.25.8",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@mastra/core": "^0.0.0-ai-v5-20250801192614",
+    "@openrouter/ai-sdk-provider": "^1.1.2",
+    "ai": "^5.0.9",
+    "dotenv": "^17.2.1",
+    "zod": "^3.25.76"
+  }
+}

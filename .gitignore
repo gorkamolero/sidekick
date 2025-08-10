@@ -101,3 +101,6 @@ dist/
 out/
 
 .env
+
+# Mastra build output
+sidecar/.mastra/
