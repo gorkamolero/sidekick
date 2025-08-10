@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { 
   Conversation, 
   ConversationContent, 
@@ -22,11 +22,6 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   // Filter out system messages for display
   const displayMessages = messages.filter((m: any) => m.role !== "system");
@@ -136,7 +131,6 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
             );
           })}
         </AnimatePresence>
-        <div ref={messagesEndRef} />
       </ConversationContent>
       <ConversationScrollButton className="bg-[var(--color-surface)] border-[var(--color-text-dim)] text-[var(--color-text-primary)] hover:bg-[var(--color-accent)] hover:text-black" />
     </Conversation>
