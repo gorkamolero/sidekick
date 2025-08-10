@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.renderer.config.ts",
+    "dev:all": "concurrently \"cd sidecar && npm run dev\" \"npm run tauri:dev\" --names \"sidecar,tauri\" --prefix-colors \"cyan,green\"",
     "build": "vite build --config vite.renderer.config.ts",
     "preview": "vite preview --config vite.renderer.config.ts",
     "tauri": "tauri",
@@ -34,6 +35,7 @@
     "@vitest/ui": "^3.2.4",
     "audio-decode": "^2.2.3",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
     "happy-dom": "^18.0.1",
@@ -47,7 +49,7 @@
   "dependencies": {
     "@ai-sdk/google": "^2.0.2",
     "@ai-sdk/openai": "^2.0.4",
-    "@ai-sdk/react": "^2.0.6",
+    "@ai-sdk/react": "^2.0.0-beta.1",
     "@crabnebula/tauri-plugin-drag": "^2.1.0",
     "@heroicons/react": "^2.2.0",
     "@linear/sdk": "^55.0.0",
