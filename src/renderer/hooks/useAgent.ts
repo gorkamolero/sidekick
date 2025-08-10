@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { useStore } from '../lib/store';
 import { ChatMessage } from '../types';
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
 
 export function useAgent() {
   const { addMessage, updateMessage, currentConversation, currentProject } = useStore();
@@ -72,8 +74,8 @@ export function useAgent() {
       let fullContent = '';
       const toolCalls: any[] = [];
 
-      // Use Mastra through IPC
-      const result = await window.electron.agent.streamMessage(
+      // TODO: Implement agent streaming through Tauri
+      /* const result = await invoke('stream_agent_message', {
         messages,
         metadata,
         (chunk) => {
@@ -121,18 +123,75 @@ export function useAgent() {
             });
           }
         }
-      );
+      }); */
+        
+        // Use AI SDK directly in the frontend - no need for IPC!
+        const response = await streamText({
+          model: openai('gpt-4'),
+          messages: messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+          tools: {
+            generateMusic: {
+              description: 'Generate music loops based on user requirements',
+              parameters: {
+                type: 'object',
+                properties: {
+                  prompt: { type: 'string', description: 'Music generation prompt' },
+                  bpm: { type: 'number', description: 'Beats per minute' },
+                  duration: { type: 'number', description: 'Duration in seconds' },
+                },
+                required: ['prompt'],
+              },
+            },
+          },
+        });
 
-      if (!result.success) {
-        throw new Error(result.error || 'Unknown error');
-      }
+        for await (const delta of response.textStream) {
+          fullContent += delta;
+          updateMessage(assistantMessage.id, {
+            content: fullContent,
+            isStreaming: true,
+          });
+        }
 
-      // Mark as complete
-      updateMessage(assistantMessage.id, {
-        content: fullContent,
-        isStreaming: false,
-        toolCalls: toolCalls,
-      });
+        // Handle tool calls if any
+        if (response.toolCalls) {
+          for (const toolCall of response.toolCalls) {
+            console.log('🎵 Tool call received:', toolCall);
+            toolCalls.push({
+              type: 'tool-call',
+              toolName: toolCall.toolName,
+              toolCallId: toolCall.toolCallId,
+              args: toolCall.args,
+              status: 'generating',
+            });
+            updateMessage(assistantMessage.id, {
+              toolCalls: [...toolCalls],
+            });
+            
+            // Simulate tool execution result
+            if (toolCall.toolName === 'generateMusic') {
+              toolCalls[toolCalls.length - 1] = {
+                ...toolCalls[toolCalls.length - 1],
+                type: 'tool-result',
+                result: { audioUrl: 'https://example.com/generated.wav', duration: 30 },
+                status: 'complete',
+              };
+              updateMessage(assistantMessage.id, {
+                toolCalls: [...toolCalls],
+              });
+            }
+          }
+        }
+        
+        // Mark as complete
+        updateMessage(assistantMessage.id, {
+          content: fullContent,
+          isStreaming: false,
+          toolCalls: toolCalls,
+        });
 
     } catch (error) {
       console.error('Agent error:', error);

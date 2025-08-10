@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useStore } from '../lib/store';
 import { MusicProvider } from '../lib/types';
+import tauriAPI from '../lib/tauri-api';
 
 export function useAudioGeneration() {
   const { addGeneration, currentProject } = useStore();
@@ -20,7 +21,7 @@ export function useAudioGeneration() {
       
       // Save locally
       const filename = `sidekick_${Date.now()}.wav`;
-      const filePath = await window.electron.saveAudioFile(buffer, filename);
+      const filePath = await tauriAPI.saveAudioFile(buffer, filename);
 
       // Add to history
       const generation = {

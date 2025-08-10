@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { domToPng } from 'modern-screenshot';
+import { startDrag } from '@crabnebula/tauri-plugin-drag';
 
 interface DraggableAudioFileProps {
   filePath: string;
@@ -25,18 +26,18 @@ export const DraggableAudioFile: React.FC<DraggableAudioFileProps> = ({
     event.preventDefault();
     setIsDragging(true);
     
-    if (dragRef.current && window.electron?.startDrag) {
-      try {
-        const dataUrl = await domToPng(dragRef.current, {
-          scale: 2,
-          backgroundColor: 'transparent'
-        });
-        window.electron.startDrag(filePath, dataUrl);
-      } catch (err) {
-        window.electron.startDrag(filePath);
-      }
-    } else if (window.electron?.startDrag) {
-      window.electron.startDrag(filePath);
+    try {
+      // Use Tauri drag plugin to start native drag
+      await startDrag({
+        item: [filePath],
+        // Optionally provide an icon for the drag preview
+        // icon: dragRef.current ? await domToPng(dragRef.current, {
+        //   scale: 2,
+        //   backgroundColor: 'transparent'
+        // }) : undefined
+      });
+    } catch (err) {
+      console.error('Failed to start drag:', err);
     }
   };
 

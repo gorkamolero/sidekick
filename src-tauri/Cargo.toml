@@ -1,0 +1,33 @@
+[package]
+name = "sidekick"
+version = "1.0.0"
+description = "AI music loop generator for Ableton Live"
+authors = ["Gorka Molero"]
+license = "MIT"
+repository = "https://github.com/gorkamolero/sidekick"
+edition = "2021"
+rust-version = "1.71"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "sidekick_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0.0-rc.13", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.0.0-rc.17", features = [] }
+tauri-plugin-log = "2.0.0-rc"
+tauri-plugin-fs = "2.0.0-rc"
+tauri-plugin-dialog = "2.0.0-rc"
+tauri-plugin-shell = "2.0.0-rc"
+tauri-plugin-drag = "2.1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures-util = "0.3"
+uuid = { version = "1.0", features = ["v4"] }

@@ -1,7 +1,7 @@
 // @ts-ignore - Essentia.js types are not fully compatible
 import Essentia from 'essentia.js/dist/essentia.js-core.es.js';
 // @ts-ignore - Essentia.js types are not fully compatible  
-import { EssentiaWASM } from 'essentia.js/dist/essentia-wasm.es.js';
+import EssentiaWASM from 'essentia.js/dist/essentia-wasm.es.js';
 import { AudioAnalysisResult } from './types';
 import { AudioLoader } from './audioLoader';
 import { FeatureExtractor } from './featureExtractor';

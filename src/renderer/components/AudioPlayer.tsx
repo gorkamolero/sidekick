@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Download, Repeat, GripVertical } from 'lucide-react';
 import { Howl } from 'howler';
 import { domToPng } from 'modern-screenshot';
+import { startDrag } from '@crabnebula/tauri-plugin-drag';
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -148,18 +149,18 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
       event.preventDefault();
       setIsDragging(true);
       
-      if (dragRef.current && window.electron && window.electron.startDrag) {
-        try {
-          const dataUrl = await domToPng(dragRef.current, {
-            scale: 2,
-            backgroundColor: 'transparent'
-          });
-          window.electron.startDrag(localFilePath, dataUrl);
-        } catch (err) {
-          window.electron.startDrag(localFilePath);
-        }
-      } else if (window.electron && window.electron.startDrag) {
-        window.electron.startDrag(localFilePath);
+      try {
+        // Use Tauri drag plugin to start native drag
+        await startDrag({
+          item: [localFilePath],
+          // Optionally provide an icon for the drag preview
+          // icon: dragRef.current ? await domToPng(dragRef.current, {
+          //   scale: 2,
+          //   backgroundColor: 'transparent'
+          // }) : undefined
+        });
+      } catch (err) {
+        console.error('Failed to start drag:', err);
       }
     };
     

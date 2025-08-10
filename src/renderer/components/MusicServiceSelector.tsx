@@ -46,7 +46,8 @@ export const MusicServiceSelector: React.FC = () => {
     setIsOpen(false);
 
     // Notify the music generation manager
-    window.electron?.ipcRenderer?.send('music:setService', serviceId);
+    // TODO: Implement service switching in Tauri
+    // await invoke('set_music_service', { serviceId });
   };
 
   const activeServiceData = services.find(s => s.id === activeService);

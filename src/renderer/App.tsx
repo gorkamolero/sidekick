@@ -13,6 +13,7 @@ import { Archive } from "lucide-react";
 import { Generation } from "./types";
 import { StatusBar } from "./components/StatusBar";
 import { ProjectBar } from "./components/ProjectBar";
+import tauriAPI from "./lib/tauri-api";
 
 const queryClient = new QueryClient();
 
@@ -33,36 +34,37 @@ function AppContent() {
     initializeStore();
 
     // Get project info on startup
-    window.electron
+    tauriAPI
       .getProjectInfo()
       .then(setProject)
       .catch((err) => {
         console.error("Error getting project info:", err);
       });
 
-    // Listen for audio generation events from main process
-    const unsubscribe = window.electron.audio.onGenerated((event, data) => {
-      console.log("Audio generated event received:", data);
+    // Listen for audio generation events
+    // TODO: Implement audio generation event listener with Tauri
+    // const unsubscribe = tauriAPI.onAudioGenerated((data) => {
+    //   console.log("Audio generated event received:", data);
+    //
+    //   // Add generation to store with the local file path
+    //   const generation: Generation = {
+    //     id: crypto.randomUUID(),
+    //     prompt: data.prompt,
+    //     timestamp: new Date(),
+    //     audioUrl: data.audioUrl,
+    //     filePath: data.localFilePath, // This is the actual file on disk!
+    //     duration: data.duration,
+    //     bpm: data.bpm || 120,
+    //     key: data.key || "C",
+    //     tags: data.tags || [],
+    //   };
+    //
+    //   addGeneration(generation);
+    // });
 
-      // Add generation to store with the local file path
-      const generation: Generation = {
-        id: Math.random().toString(36).substr(2, 9),
-        prompt: data.prompt,
-        timestamp: new Date(),
-        audioUrl: data.audioUrl,
-        filePath: data.localFilePath, // This is the actual file on disk!
-        duration: data.duration,
-        bpm: data.bpm || 120,
-        key: data.key || "C",
-        tags: data.tags || [],
-      };
-
-      addGeneration(generation);
-    });
-
-    return () => {
-      unsubscribe();
-    };
+    // return () => {
+    //   unsubscribe();
+    // };
   }, [setProject, initializeStore, addGeneration]);
 
   return (
