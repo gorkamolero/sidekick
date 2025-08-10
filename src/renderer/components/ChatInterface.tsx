@@ -14,15 +14,6 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  console.log('ChatInterface messages:', messages);
-  if (messages.length > 0) {
-    console.log('Last message details:', {
-      role: messages[messages.length - 1].role,
-      content: messages[messages.length - 1].content,
-      attachments: (messages[messages.length - 1] as any).experimental_attachments,
-    });
-  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -128,14 +119,7 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                     
                     {/* Always show tool calls if available */}
                     {message.role === "assistant" && message.toolInvocations && (
-                      <ToolCallDisplay toolCalls={message.toolInvocations.map((tool: any) => ({
-                        type: 'tool-call',
-                        toolName: tool.toolName,
-                        toolCallId: tool.toolCallId,
-                        args: tool.args,
-                        result: tool.result,
-                        status: tool.state === 'result' ? 'complete' : 'generating'
-                      }))} />
+                      <ToolCallDisplay toolCalls={message.toolInvocations} />
                     )}
                   </MessageContent>
                 </Message>

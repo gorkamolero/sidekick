@@ -12,9 +12,6 @@ export function useAgent() {
     transport: new DefaultChatTransport({
       api: 'http://localhost:3001/chat',
     }) as any,
-    onFinish: (message) => {
-      console.log('Message finished:', message);
-    },
     onError: (error) => {
       console.error('Chat error:', error);
     },
