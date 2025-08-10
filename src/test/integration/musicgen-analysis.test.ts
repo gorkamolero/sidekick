@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, vi, afterEach } from 'vitest';
-import { AudioAnalyzer } from '../../renderer/tools/AudioAnalyzer';
+import { AudioAnalyzer } from '../../tools/AudioAnalyzer';
 import fs from 'fs';
 import path from 'path';
 
 // Mock the essentia service module
-vi.mock('../../renderer/services/essentiaService', () => ({
+vi.mock('../../services/essentiaService', () => ({
   essentiaService: {
     analyze: vi.fn(),
     detectBPM: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('../../renderer/services/essentiaService', () => ({
   }
 }));
 
-import { essentiaService } from '../../renderer/services/essentiaService';
+import { essentiaService } from '../../services/essentiaService';
 
 // Create a mock dark techno audio buffer at 132 BPM
 function generateDarkTechnoAudio(bpm = 132, duration = 8): Float32Array {

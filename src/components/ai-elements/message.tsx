@@ -2,9 +2,9 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@/renderer/components/ui/avatar';
+} from '@/components/ui/avatar';
 import type { ComponentProps, HTMLAttributes } from 'react';
-import { cn } from '@/renderer/lib/utils';
+import { cn } from '@/lib/utils';
 import type { UIMessage } from 'ai';
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {

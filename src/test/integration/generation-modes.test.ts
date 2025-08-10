@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, vi, afterEach } from 'vitest';
-import { AudioAnalyzer } from '../../renderer/tools/AudioAnalyzer';
+import { AudioAnalyzer } from '../../tools/AudioAnalyzer';
 
 // Mock the essentia service module
-vi.mock('../../renderer/services/essentiaService', () => ({
+vi.mock('../../services/essentiaService', () => ({
   essentiaService: {
     analyze: vi.fn(),
     detectBPM: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock('../../renderer/services/essentiaService', () => ({
   }
 }));
 
-import { essentiaService } from '../../renderer/services/essentiaService';
+import { essentiaService } from '../../services/essentiaService';
 
 // Generate test audio for different durations
 function generateTestAudio(duration: number, type: 'loop' | 'sample' | 'inspiration'): Float32Array {
