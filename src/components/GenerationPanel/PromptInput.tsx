@@ -112,8 +112,8 @@ export function PromptInput({ prompt, onPromptChange, onSubmit, isProcessing, on
         />
         
         {attachedFile && (
-          <PromptInputToolbar className="pb-0 mb-0">
-            <PromptInputTools className="pb-0 mb-0 [&_button:first-child]:rounded-bl-none">
+          <PromptInputToolbar>
+            <PromptInputTools>
               <div className="flex items-center gap-2">
                 <Music className="w-4 h-4 text-[var(--color-accent)] flex-shrink-0" />
                 <span className="text-sm text-[var(--color-text-secondary)] truncate max-w-[150px]">
@@ -121,7 +121,7 @@ export function PromptInput({ prompt, onPromptChange, onSubmit, isProcessing, on
                 </span>
                 <button
                   onClick={onFileRemove}
-                  className="p-1 rounded hover:bg-[var(--color-background)] transition-colors flex-shrink-0 mb-0 pb-0"
+                  className="p-1 rounded hover:bg-[var(--color-background)] transition-colors flex-shrink-0"
                   title="Remove file"
                 >
                   <X className="w-3 h-3 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]" />
