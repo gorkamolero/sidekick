@@ -3,15 +3,17 @@ import { Play, Pause, Download, Repeat, GripVertical } from 'lucide-react';
 import { Howl } from 'howler';
 import { domToPng } from 'modern-screenshot';
 import { startDrag } from '@crabnebula/tauri-plugin-drag';
+import { ChordProgression } from './ChordProgression';
 
 interface AudioPlayerProps {
   audioUrl: string;
   localFilePath?: string;
   prompt: string;
   duration: number;
+  showChordProgression?: boolean;
 }
 
-export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: AudioPlayerProps) {
+export function AudioPlayer({ audioUrl, localFilePath, prompt, duration, showChordProgression = false }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLooping, setIsLooping] = useState(true); // Default to looping
   const [currentTime, setCurrentTime] = useState(0);
@@ -138,6 +140,7 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
   
   const handleDragStart = async (event: React.DragEvent<HTMLDivElement>) => {
     if (!localFilePath) {
+      console.warn('No local file path available for drag operation');
       return;
     }
     
@@ -145,17 +148,20 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
     setIsDragging(true);
     
     try {
+      console.log('Starting drag with file:', localFilePath);
+      
       // Use Tauri drag plugin to start native drag
       await startDrag({
         item: [localFilePath],
-        // Optionally provide an icon for the drag preview
-        // icon: dragRef.current ? await domToPng(dragRef.current, {
-        //   scale: 2,
-        //   backgroundColor: 'transparent'
-        // }) : undefined
+        icon: '', // Empty string for no icon
+        mode: 'copy'
+      }, (result) => {
+        console.log('Drag operation result:', result);
+        setIsDragging(false);
       });
     } catch (err) {
       console.error('Failed to start drag:', err);
+      setIsDragging(false);
     }
   };
 
@@ -164,55 +170,67 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
   };
 
   return (
-    <div 
-      ref={dragRef}
-      className="flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-text-secondary)]/30 rounded-md px-2 py-1.5 transition-all hover:border-[var(--color-accent)] cursor-move w-full max-w-full"
-      draggable={true}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      title="Drag to Ableton Live"
-    >
-      <GripVertical size={12} className="text-[var(--color-text-dim)] flex-shrink-0" />
-      
-      <button
-        onClick={togglePlayback}
-        className="w-6 h-6 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-full flex items-center justify-center text-black transition-colors flex-shrink-0"
+    <div className="space-y-2">
+      <div 
+        ref={dragRef}
+        className={`flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-text-secondary)]/30 rounded-md px-2 py-1.5 transition-all hover:border-[var(--color-accent)] cursor-move w-full max-w-full ${
+          isDragging ? 'opacity-50 scale-95 border-[var(--color-accent)] animate-pulse' : ''
+        } ${localFilePath ? 'hover:shadow-md hover:shadow-[var(--color-accent)]/20' : 'cursor-default opacity-60'}`}
+        draggable={!!localFilePath}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        title={localFilePath ? "Drag to Ableton Live" : "File not available for drag"}
       >
-        {isPlaying ? <Pause size={12} /> : <Play size={12} />}
-      </button>
+        <GripVertical size={12} className="text-[var(--color-text-dim)] flex-shrink-0" />
+        
+        <button
+          onClick={togglePlayback}
+          className="w-6 h-6 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-full flex items-center justify-center text-black transition-colors flex-shrink-0"
+        >
+          {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+        </button>
 
-      <div className="flex-1 min-w-0 max-w-[120px]">
-        <div className="bg-[var(--color-void)] h-1 rounded-full">
-          <div 
-            className="bg-[var(--color-accent)] h-1 rounded-full transition-all duration-100"
-            style={{ width: `${(currentTime / duration) * 100}%` }}
-          />
+        <div className="flex-1 min-w-0 max-w-[120px]">
+          <div className="bg-[var(--color-void)] h-1 rounded-full">
+            <div 
+              className="bg-[var(--color-accent)] h-1 rounded-full transition-all duration-100"
+              style={{ width: `${(currentTime / duration) * 100}%` }}
+            />
+          </div>
         </div>
+        
+        <span className="text-[10px] text-[var(--color-text-secondary)] font-mono flex-shrink-0">
+          {formatTime(currentTime)}/{formatTime(duration)}
+        </span>
+
+        <button
+          onClick={toggleLoop}
+          className={`w-6 h-6 hover:bg-[var(--color-surface)] rounded flex items-center justify-center transition-colors flex-shrink-0 ${
+            isLooping 
+              ? 'text-[var(--color-accent)]' 
+              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]'
+          }`}
+          title={isLooping ? 'Loop enabled' : 'Loop disabled'}
+        >
+          <Repeat size={12} />
+        </button>
+
+        <button
+          onClick={handleDownload}
+          className="w-6 h-6 hover:bg-[var(--color-surface)] rounded flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
+          title="Download"
+        >
+          <Download size={12} />
+        </button>
       </div>
-      
-      <span className="text-[10px] text-[var(--color-text-secondary)] font-mono flex-shrink-0">
-        {formatTime(currentTime)}/{formatTime(duration)}
-      </span>
 
-      <button
-        onClick={toggleLoop}
-        className={`w-6 h-6 hover:bg-[var(--color-surface)] rounded flex items-center justify-center transition-colors flex-shrink-0 ${
-          isLooping 
-            ? 'text-[var(--color-accent)]' 
-            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]'
-        }`}
-        title={isLooping ? 'Loop enabled' : 'Loop disabled'}
-      >
-        <Repeat size={12} />
-      </button>
-
-      <button
-        onClick={handleDownload}
-        className="w-6 h-6 hover:bg-[var(--color-surface)] rounded flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors flex-shrink-0"
-        title="Download"
-      >
-        <Download size={12} />
-      </button>
+      {showChordProgression && (
+        <ChordProgression 
+          audioUrl={audioUrl}
+          currentTime={currentTime}
+          isVisible={showChordProgression}
+        />
+      )}
     </div>
   );
 }
