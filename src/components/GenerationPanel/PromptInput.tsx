@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { X, Music } from 'lucide-react';
+import { useStore } from '../../lib/store';
 
 interface PromptInputProps {
   prompt: string;
@@ -15,6 +16,7 @@ interface PromptInputProps {
 export function PromptInput({ prompt, onPromptChange, onSubmit, isProcessing, onFileSelect, isAnalyzing, attachedFile, onFileRemove }: PromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const { shouldFocusPrompt, clearFocusPrompt } = useStore();
 
   // Auto-focus on mount and when processing completes
   useEffect(() => {
@@ -22,6 +24,14 @@ export function PromptInput({ prompt, onPromptChange, onSubmit, isProcessing, on
       textareaRef.current?.focus();
     }
   }, [isProcessing]);
+  
+  // Focus when new tab is created
+  useEffect(() => {
+    if (shouldFocusPrompt) {
+      textareaRef.current?.focus();
+      clearFocusPrompt();
+    }
+  }, [shouldFocusPrompt, clearFocusPrompt]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

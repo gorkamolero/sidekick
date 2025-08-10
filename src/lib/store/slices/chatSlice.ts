@@ -1,7 +1,6 @@
 import { StateCreator } from 'zustand';
 import { ChatMessage, Conversation } from '../../../types';
-import { ConversationStorage, conversationDB } from '../../storage';
-import { TabStorage } from '../../storage/tabStorage';
+import { ConversationStorage, conversationDB, TabStorage } from '../../db';
 
 export interface ChatSlice {
   currentConversation: Conversation | null;
@@ -9,6 +8,7 @@ export interface ChatSlice {
   openTabIds: string[];
   activeView: 'chat' | 'history';
   attachedFile: File | null;
+  shouldFocusPrompt: boolean;
   
   addMessage: (message: ChatMessage) => void;
   updateMessage: (messageId: string, updates: Partial<ChatMessage>) => void;
@@ -20,6 +20,8 @@ export interface ChatSlice {
   setActiveView: (view: 'chat' | 'history') => void;
   setAttachedFile: (file: File | null) => void;
   initializeStore: () => void;
+  clearFocusPrompt: () => void;
+  reorderTabs: (newOrder: string[]) => void;
 }
 
 export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
@@ -28,6 +30,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
   openTabIds: [],
   activeView: 'chat',
   attachedFile: null,
+  shouldFocusPrompt: false,
   
   addMessage: (message) => 
     set((state) => {
@@ -40,13 +43,13 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
           updatedAt: new Date(),
         };
         
-        ConversationStorage.saveCurrentConversationId(newConversation.id);
+        ConversationStorage.saveCurrentConversationId(newConversation.id).catch(console.error);
         const updatedConversations = [newConversation, ...state.conversations];
-        ConversationStorage.saveConversations(updatedConversations);
+        ConversationStorage.saveConversations(updatedConversations).catch(console.error);
         conversationDB.saveConversation(newConversation).catch(console.error);
         
-        const newTabIds = [newConversation.id, ...state.openTabIds.slice(0, 9)];
-        TabStorage.save(newTabIds);
+        const newTabIds = [...state.openTabIds.slice(0, 9), newConversation.id];
+        TabStorage.save(newTabIds).catch(console.error);
         
         return {
           currentConversation: newConversation,
@@ -68,7 +71,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
         conv.id === updatedConversation.id ? updatedConversation : conv
       );
       
-      ConversationStorage.saveConversations(updatedConversations);
+      ConversationStorage.saveConversations(updatedConversations).catch(console.error);
       conversationDB.saveConversation(updatedConversation).catch(console.error);
       
       return {
@@ -92,7 +95,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
         conv.id === updatedConversation.id ? updatedConversation : conv
       );
       
-      ConversationStorage.saveConversations(updatedConversations);
+      ConversationStorage.saveConversations(updatedConversations).catch(console.error);
       conversationDB.saveConversation(updatedConversation).catch(console.error);
       
       return {
@@ -102,9 +105,29 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
     }),
     
   createNewConversation: () => {
-    ConversationStorage.saveCurrentConversationId(null);
-    set({
-      currentConversation: null,
+    const newConversation: Conversation = {
+      id: crypto.randomUUID(),
+      messages: [],
+      title: 'New Conversation',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    set((state) => {
+      const updatedConversations = [newConversation, ...state.conversations];
+      const newTabIds = [...state.openTabIds.filter(id => id !== newConversation.id).slice(0, 9), newConversation.id];
+      
+      ConversationStorage.saveConversations(updatedConversations).catch(console.error);
+      ConversationStorage.saveCurrentConversationId(newConversation.id).catch(console.error);
+      TabStorage.save(newTabIds).catch(console.error);
+      conversationDB.saveConversation(newConversation).catch(console.error);
+      
+      return {
+        currentConversation: newConversation,
+        conversations: updatedConversations,
+        openTabIds: newTabIds,
+        shouldFocusPrompt: true,
+      };
     });
   },
     
@@ -112,13 +135,13 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
     set((state) => {
       const conversation = state.conversations.find(conv => conv.id === conversationId);
       if (conversation) {
-        ConversationStorage.saveCurrentConversationId(conversationId);
+        ConversationStorage.saveCurrentConversationId(conversationId).catch(console.error);
         
         const newOpenTabs = state.openTabIds.includes(conversationId) 
           ? state.openTabIds 
-          : [conversationId, ...state.openTabIds.slice(0, 9)];
+          : [...state.openTabIds.slice(0, 9), conversationId];
         
-        TabStorage.save(newOpenTabs);
+        TabStorage.save(newOpenTabs).catch(console.error);
         
         return { 
           currentConversation: conversation,
@@ -133,11 +156,11 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
       const updatedConversations = state.conversations.filter(conv => conv.id !== conversationId);
       const isCurrentConversation = state.currentConversation?.id === conversationId;
       
-      ConversationStorage.saveConversations(updatedConversations);
+      ConversationStorage.saveConversations(updatedConversations).catch(console.error);
       conversationDB.deleteConversation(conversationId).catch(console.error);
       
       if (isCurrentConversation) {
-        ConversationStorage.saveCurrentConversationId(null);
+        ConversationStorage.saveCurrentConversationId(null).catch(console.error);
         return {
           conversations: updatedConversations,
           currentConversation: null,
@@ -151,20 +174,20 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
     set((state) => {
       const updatedTabIds = state.openTabIds.filter(id => id !== conversationId);
       
-      TabStorage.save(updatedTabIds);
+      TabStorage.save(updatedTabIds).catch(console.error);
       
       if (state.currentConversation?.id === conversationId) {
         if (updatedTabIds.length > 0) {
           const nextConversation = state.conversations.find(c => c.id === updatedTabIds[0]);
           if (nextConversation) {
-            ConversationStorage.saveCurrentConversationId(nextConversation.id);
+            ConversationStorage.saveCurrentConversationId(nextConversation.id).catch(console.error);
           }
           return {
             openTabIds: updatedTabIds,
             currentConversation: nextConversation || null,
           };
         } else {
-          ConversationStorage.saveCurrentConversationId(null);
+          ConversationStorage.saveCurrentConversationId(null).catch(console.error);
           return {
             openTabIds: updatedTabIds,
             currentConversation: null,
@@ -178,8 +201,8 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
   openTab: (conversationId) =>
     set((state) => {
       if (!state.openTabIds.includes(conversationId)) {
-        const newTabIds = [conversationId, ...state.openTabIds.slice(0, 9)];
-        TabStorage.save(newTabIds);
+        const newTabIds = [...state.openTabIds.slice(0, 9), conversationId];
+        TabStorage.save(newTabIds).catch(console.error);
         return {
           openTabIds: newTabIds,
         };
@@ -192,35 +215,80 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
   
   setAttachedFile: (file) =>
     set({ attachedFile: file }),
+  
+  clearFocusPrompt: () =>
+    set({ shouldFocusPrompt: false }),
+  
+  reorderTabs: (newOrder) => {
+    TabStorage.save(newOrder).catch(console.error);
+    set({ openTabIds: newOrder });
+  },
     
   initializeStore: async () => {
-    const conversations = ConversationStorage.loadConversations();
-    const currentConversationId = ConversationStorage.loadCurrentConversationId();
-    const currentConversation = currentConversationId 
-      ? conversations.find(c => c.id === currentConversationId) || null
-      : null;
-    
-    const savedTabIds = TabStorage.load();
-    let openTabIds = savedTabIds.filter(id => conversations.some(c => c.id === id));
-    
-    if (openTabIds.length === 0 && currentConversation) {
-      openTabIds = [currentConversation.id];
-    }
-    
-    set({
-      conversations,
-      currentConversation,
-      openTabIds,
-    });
-    
     try {
+      const conversations = await ConversationStorage.loadConversations();
+      const currentConversationId = await ConversationStorage.loadCurrentConversationId();
+      const currentConversation = currentConversationId 
+        ? conversations.find(c => c.id === currentConversationId) || null
+        : null;
+      
+      const savedTabIds = await TabStorage.load();
+      let openTabIds = savedTabIds.filter(id => conversations.some(c => c.id === id));
+      
+      // If no tabs are open, create a new conversation
+      if (openTabIds.length === 0) {
+        const newConversation: Conversation = {
+          id: crypto.randomUUID(),
+          messages: [],
+          title: 'New Conversation',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        const updatedConversations = [newConversation, ...conversations];
+        openTabIds = [newConversation.id];
+        
+        set({
+          conversations: updatedConversations,
+          currentConversation: newConversation,
+          openTabIds,
+        });
+        
+        // Save the new state
+        await ConversationStorage.saveConversations(updatedConversations);
+        await ConversationStorage.saveCurrentConversationId(newConversation.id);
+        await TabStorage.save(openTabIds);
+        await conversationDB.saveConversation(newConversation);
+      } else {
+        set({
+          conversations,
+          currentConversation,
+          openTabIds,
+        });
+      }
+      
+      // Load additional conversations from IndexedDB
       await conversationDB.init();
       const allConversations = await conversationDB.loadAllConversations();
       if (allConversations.length > conversations.length) {
         set({ conversations: allConversations });
       }
     } catch (error) {
-      console.error('Failed to load from IndexedDB:', error);
+      console.error('Failed to initialize store:', error);
+      // Create a default conversation on error
+      const newConversation: Conversation = {
+        id: crypto.randomUUID(),
+        messages: [],
+        title: 'New Conversation',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      set({
+        conversations: [newConversation],
+        currentConversation: newConversation,
+        openTabIds: [newConversation.id],
+      });
     }
   },
 });
