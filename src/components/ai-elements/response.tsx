@@ -1,6 +1,6 @@
 'use client';
 
-import { CodeBlock, CodeBlockCopyButton } from './code-block';
+// Removed code-block import - not needed for music generation app
 import type { ComponentProps, HTMLAttributes } from 'react';
 import { memo } from 'react';
 import ReactMarkdown, { type Options } from 'react-markdown';
@@ -261,16 +261,9 @@ const components: Options['components'] = {
     }
 
     return (
-      <CodeBlock
-        className={cn('my-4 h-auto', className)}
-        code={(children.props as { children: string }).children}
-        language={language}
-      >
-        <CodeBlockCopyButton
-          onCopy={() => console.log('Copied code to clipboard')}
-          onError={() => console.error('Failed to copy code to clipboard')}
-        />
-      </CodeBlock>
+      <pre className={cn('my-4 p-3 rounded-md bg-muted/50 overflow-x-auto text-xs', className)}>
+        <code>{(children.props as { children: string }).children}</code>
+      </pre>
     );
   },
 };

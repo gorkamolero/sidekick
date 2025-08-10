@@ -93,6 +93,39 @@ const generateMusic = createTool({
   },
 });
 
+const testComponent = createTool({
+  id: 'test-component',
+  description: 'Test tool that returns a simple component for testing the UI',
+  inputSchema: z.object({
+    message: z.string().describe('A test message to display'),
+    variant: z.enum(['success', 'error', 'info']).optional().describe('Variant of the test component'),
+  }),
+  execute: async ({ context }) => {
+    const { message, variant = 'success' } = context;
+    console.log('🧪 TEST COMPONENT TOOL EXECUTING!');
+    console.log('Message:', message);
+    console.log('Variant:', variant);
+    
+    // Simulate some processing time
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    return {
+      status: variant === 'error' ? 'error' : 'success',
+      message: `Test ${variant}: ${message}`,
+      componentData: {
+        title: 'Test Component Output',
+        content: message,
+        timestamp: new Date().toISOString(),
+        variant,
+        metadata: {
+          testId: Math.random().toString(36).substring(7),
+          processedAt: Date.now(),
+        }
+      }
+    };
+  },
+});
+
 const getProjectInfo = createTool({
   id: 'get-project-info',
   description: 'Get current Ableton project information',
@@ -119,5 +152,6 @@ export const agent = new Agent({
     generateMusic,
     analyzeAudio: analyzeAudioStreaming,
     getProjectInfo,
+    testComponent,
   },
 });

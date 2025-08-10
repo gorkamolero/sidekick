@@ -1,6 +1,7 @@
-import { Loader2, CheckCircle, AlertCircle, XCircle } from "lucide-react";
-import { cn } from "../lib/utils";
+import { Tool, ToolHeader, ToolContent, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import { AudioPlayer } from "./AudioPlayer";
+import { cn } from "@/lib/utils";
+import React from "react";
 
 interface ToolCallDisplayProps {
   toolCalls?: any[];
@@ -13,25 +14,27 @@ export function ToolCallDisplay({
 }: ToolCallDisplayProps) {
   if (!toolCalls || toolCalls.length === 0) return null;
 
+  // Debug logging to understand the structure
+  console.log('ToolCallDisplay received toolCalls:', toolCalls);
+
   return (
     <div className={cn("space-y-2 mt-2", className)}>
       {toolCalls.map((toolCall, index) => {
-        // AI SDK v5 uses 'state' field
-        const isGenerating = toolCall.state === 'call';
-        const isComplete = toolCall.state === 'result';
-
-        const getStatusIcon = () => {
-          if (isGenerating) {
-            return <Loader2 className="w-3 h-3 animate-spin" />;
+        // Debug each tool call
+        console.log(`Tool call ${index}:`, toolCall);
+        console.log('Tool call state:', toolCall.state);
+        console.log('Tool call result:', toolCall.result);
+        console.log('Tool call output:', toolCall.output);
+        
+        // Map old state to new Tool component states
+        const getToolState = () => {
+          if (toolCall.state === 'call') return 'input-available';
+          if (toolCall.state === 'result') {
+            // Check both result and output fields
+            const result = toolCall.result || toolCall.output;
+            return result?.status === 'success' ? 'output-available' : 'output-error';
           }
-          if (isComplete && toolCall.result) {
-            if (toolCall.result.status === "success") {
-              return <CheckCircle className="w-3 h-3 text-green-500" />;
-            } else {
-              return <XCircle className="w-3 h-3 text-red-500" />;
-            }
-          }
-          return <AlertCircle className="w-3 h-3 text-yellow-500" />;
+          return 'input-streaming';
         };
 
         const getToolDisplayName = () => {
@@ -39,117 +42,139 @@ export function ToolCallDisplay({
             toolCall.toolName === "generate-music" ||
             toolCall.toolName === "generateMusic"
           ) {
-            return "Generating Music";
+            return "Generate Music";
           }
           if (toolCall.toolName === "analyzeAudio") {
-            return "Analyzing Audio";
+            return "Analyze Audio";
           }
           if (
             toolCall.toolName === "getProjectInfo" ||
             toolCall.toolName === "get-project-info"
           ) {
-            return "Getting Project Info";
+            return "Get Project Info";
+          }
+          if (toolCall.toolName === "test-component" || toolCall.toolName === "testComponent") {
+            return "Test Component";
           }
           return toolCall.toolName;
         };
 
-        return (
-          <div
-            key={toolCall.toolCallId || index}
-            className={cn(
-              "flex items-start p-2 rounded-md border text-xs font-mono",
-              isGenerating &&
-                "border-[var(--color-accent)] bg-[var(--color-accent)]/10 animate-pulse",
-              isComplete && toolCall.result?.status === "success" && "border-green-500/30 bg-green-500/5",
-              isComplete && toolCall.result?.status !== "success" && "border-red-500/30 bg-red-500/5",
-              !isGenerating &&
-                !isComplete &&
-                "border-[var(--color-text-dim)] bg-[var(--color-surface)]",
-            )}
-          >
-            <div className="flex items-center flex-shrink-0 mr-1.5">
-              {getStatusIcon()}
-            </div>
+        const renderOutput = () => {
+          // Check both result and output fields (AI SDK v5 might use output)
+          const result = toolCall.result || toolCall.output;
+          if (!result) return null;
 
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-[var(--color-text-primary)]">
-                {getToolDisplayName()}
-              </div>
-
-              {toolCall.args && (
-                <div className="mt-2 text-[10px] text-[var(--color-text-secondary)]">
-                  {toolCall.args.prompt && (
-                    <div className="truncate">
-                      Prompt: {toolCall.args.prompt}
-                    </div>
-                  )}
-                  {toolCall.args.duration && (
-                    <div>Duration: {toolCall.args.duration}s</div>
-                  )}
-                  {toolCall.args.mode && <div>Mode: {toolCall.args.mode}</div>}
+          // Special handling for test component
+          if ((toolCall.toolName === "test-component" || toolCall.toolName === "testComponent")) {
+            const data = result.componentData;
+            return (
+              <div className="p-3 space-y-2">
+                <div className={cn(
+                  "text-sm font-medium",
+                  result.status === "success" ? "text-green-600" : "text-red-600"
+                )}>
+                  {result.status === "success" ? "✓" : "✗"} {data?.title || "Test Component"}
                 </div>
+                <div className="p-2 bg-muted/50 rounded text-xs space-y-1">
+                  <div><span className="text-muted-foreground">Content:</span> {data?.content}</div>
+                  <div><span className="text-muted-foreground">Variant:</span> {data?.variant}</div>
+                  <div><span className="text-muted-foreground">Test ID:</span> {data?.metadata?.testId}</div>
+                  <div><span className="text-muted-foreground">Timestamp:</span> {new Date(data?.timestamp).toLocaleTimeString()}</div>
+                </div>
+              </div>
+            );
+          }
+
+          // Special handling for audio analysis
+          if (toolCall.toolName === "analyzeAudio" && result.status === "success") {
+            return (
+              <div className="p-3 space-y-2">
+                <div className="text-sm font-medium text-green-600">
+                  ✓ {result.finalMessage || "Analysis complete"}
+                </div>
+                {result.technical && (
+                  <div className="grid grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">BPM:</span>{" "}
+                      <span className="font-mono">{result.technical.bpm?.toFixed(0)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Key:</span>{" "}
+                      <span className="font-mono">{result.technical.key} {result.technical.scale}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Energy:</span>{" "}
+                      <span className="font-mono">
+                        {result.technical.energy > 100000 ? "High" : 
+                         result.technical.energy > 50000 ? "Medium" : "Low"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Special handling for music generation
+          if ((toolCall.toolName === "generate-music" || toolCall.toolName === "generateMusic") && 
+              result.status === "success" && result.audioUrl) {
+            return (
+              <div className="p-3 space-y-3">
+                <div className="text-sm font-medium text-green-600">
+                  ✓ {result.message || "Music generated successfully"}
+                  {result.service && (
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      via {result.service}
+                    </span>
+                  )}
+                </div>
+                <AudioPlayer
+                  audioUrl={result.audioUrl}
+                  localFilePath={result.localFilePath}
+                  prompt={result.prompt || toolCall.args?.prompt || ""}
+                  duration={result.duration || 8}
+                />
+              </div>
+            );
+          }
+
+          // Default output
+          return (
+            <div className="p-3">
+              <div className={cn(
+                "text-sm",
+                result.status === "success" ? "text-green-600" : "text-red-600"
+              )}>
+                {result.status === "success" ? "✓" : "✗"} {result.message || 
+                  (result.status === "success" ? "Completed successfully" : "Failed")}
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <Tool key={toolCall.toolCallId || index} defaultOpen={false}>
+            <ToolHeader 
+              type={getToolDisplayName()} 
+              state={getToolState()}
+            />
+            <ToolContent>
+              {toolCall.args && (
+                <ToolInput input={toolCall.args} />
               )}
-              
-              {/* Show progress message if available */}
-              {toolCall.progressMessage && isGenerating && (
-                <div className="mt-1 text-[10px] text-[var(--color-accent)] animate-pulse">
+              {toolCall.progressMessage && toolCall.state === 'call' && (
+                <div className="px-4 pb-2 text-xs text-[var(--color-accent)] animate-pulse">
                   {toolCall.progressMessage}
                 </div>
               )}
-
-              {toolCall.result && isComplete && (
-                <>
-                  <div className="mt-2 text-[10px] text-green-600">
-                    {toolCall.result.status === "success" ? (
-                      <div>
-                        {/* Special handling for audio analysis to show concise summary */}
-                        {toolCall.toolName === "analyzeAudio" ? (
-                          <div>
-                            ✓ {toolCall.result.finalMessage || "Analysis complete"}
-                            {toolCall.result.technical && (
-                              <div className="text-[var(--color-text-secondary)] mt-1">
-                                {toolCall.result.technical.bpm?.toFixed(0)} BPM • 
-                                {toolCall.result.technical.key} {toolCall.result.technical.scale} • 
-                                {toolCall.result.technical.energy > 100000 ? "High" : 
-                                 toolCall.result.technical.energy > 50000 ? "Medium" : "Low"} energy
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <>
-                            ✓ {toolCall.result.message || "Completed successfully"}
-                            {toolCall.result.service && (
-                              <span className="ml-1 text-[var(--color-text-dim)]">
-                                via {toolCall.result.service}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-red-500">
-                        {toolCall.result.message || "Failed"}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Show AudioPlayer for successful music generation */}
-                  {toolCall.result.status === "success" && 
-                   (toolCall.toolName === "generate-music" || toolCall.toolName === "generateMusic") &&
-                   toolCall.result.audioUrl && (
-                    <div className="mt-2">
-                      <AudioPlayer
-                        audioUrl={toolCall.result.audioUrl}
-                        localFilePath={toolCall.result.localFilePath}
-                        prompt={toolCall.result.prompt || toolCall.args?.prompt || ""}
-                        duration={toolCall.result.duration || 8}
-                      />
-                    </div>
-                  )}
-                </>
+              {(toolCall.result || toolCall.output) && (
+                <ToolOutput 
+                  output={renderOutput()}
+                  errorText={(toolCall.result || toolCall.output)?.status !== "success" ? (toolCall.result || toolCall.output)?.message : undefined}
+                />
               )}
-            </div>
-          </div>
+            </ToolContent>
+          </Tool>
         );
       })}
     </div>
