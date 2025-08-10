@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { Terminal, Send } from 'lucide-react';
-import { useStore } from '../lib/store';
-import { useAgent } from '../hooks/useAgent';
-import { AudioDropZone } from './AudioDropZone';
-import { GenerationMode } from './GenerationPanel/ModeSelector';
-import { ExpandableModeSelector } from './GenerationPanel/ExpandableModeSelector';
-import { ProjectInfoDisplay } from './GenerationPanel/ProjectInfoDisplay';
-import { PromptInput } from './GenerationPanel/PromptInput';
-import { ExecuteButton } from './GenerationPanel/ExecuteButton';
-import { getModeInstructions } from './GenerationPanel/modeInstructions';
+import React, { useState } from "react";
+import { Terminal, Send } from "lucide-react";
+import { useStore } from "../lib/store";
+import { useAgent } from "../hooks/useAgent";
+import { AudioDropZone } from "./AudioDropZone";
+import { GenerationMode } from "./GenerationPanel/ModeSelector";
+import { ExpandableModeSelector } from "./GenerationPanel/ExpandableModeSelector";
+import { ProjectInfoDisplay } from "./GenerationPanel/ProjectInfoDisplay";
+import { PromptInput } from "./GenerationPanel/PromptInput";
+import { ExecuteButton } from "./GenerationPanel/ExecuteButton";
+import { getModeInstructions } from "./GenerationPanel/modeInstructions";
 
 export function GenerationPanel() {
-  const [prompt, setPrompt] = useState('');
-  const [mode, setMode] = useState<GenerationMode>('loop');
+  const [prompt, setPrompt] = useState("");
+  const [mode, setMode] = useState<GenerationMode>("loop");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
@@ -22,18 +22,22 @@ export function GenerationPanel() {
   const handleSubmit = async () => {
     const message = prompt.trim();
     if (!message || isProcessing) return;
-    
-    setPrompt('');
-    
+
+    setPrompt("");
+
     // Pass file info through metadata instead of in message text
     const metadata: any = { mode };
     if (attachedFile && savedFilePath) {
       metadata.audioFile = {
         name: attachedFile.name,
-        path: savedFilePath
+        path: savedFilePath,
       };
+      
+      // Clear file immediately after capturing it in metadata
+      setAttachedFile(null);
+      setSavedFilePath(null);
     }
-    
+
     await sendMessage(message, metadata);
   };
 
@@ -41,14 +45,16 @@ export function GenerationPanel() {
     setIsAnalyzing(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const savedPath = await (window as any).electron?.saveAudioFile(arrayBuffer, file.name);
-      
+      const savedPath = await (window as any).electron?.saveAudioFile(
+        arrayBuffer,
+        file.name,
+      );
+
       // Store the file and path for later use - NO automatic analysis
       setAttachedFile(file);
       setSavedFilePath(savedPath);
-      
     } catch (error) {
-      console.error('Failed to process audio file:', error);
+      console.error("Failed to process audio file:", error);
       // Still attach the file even if save fails
       setAttachedFile(file);
     } finally {
@@ -64,7 +70,6 @@ export function GenerationPanel() {
   return (
     <div>
       <div className="p-3">
-        
         <div className="relative">
           <PromptInput
             prompt={prompt}
@@ -76,7 +81,7 @@ export function GenerationPanel() {
             attachedFile={attachedFile}
             onFileRemove={handleFileRemove}
           />
-          <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
+          <div className="absolute right-2 bottom-4 flex items-center gap-1.5">
             <ExpandableModeSelector mode={mode} onModeChange={setMode} />
             <button
               onClick={handleSubmit}

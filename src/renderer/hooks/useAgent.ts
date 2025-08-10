@@ -124,6 +124,19 @@ export function useAgent() {
             updateMessage(assistantMessage.id, {
               toolCalls: [...toolCalls],
             });
+          } else if (chunk.type === 'tool-progress') {
+            console.log('🔄 Tool progress in renderer:', chunk);
+            // Update the tool call with progress info
+            const toolIndex = toolCalls.findIndex(t => t.toolCallId === chunk.toolCallId);
+            if (toolIndex >= 0) {
+              toolCalls[toolIndex] = {
+                ...toolCalls[toolIndex],
+                progressMessage: chunk.delta?.message || 'Processing...',
+              };
+              updateMessage(assistantMessage.id, {
+                toolCalls: [...toolCalls],
+              });
+            }
           }
         }
       );

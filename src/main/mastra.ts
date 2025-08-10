@@ -6,7 +6,7 @@ import * as dotenv from 'dotenv';
 import { getMusicGenerationManager } from '../services/music-generation/manager';
 import { AudioService } from './services/audio';
 import { SIDEKICK_SYSTEM_PROMPT } from '../shared/prompts';
-import { analyzeAudio } from './tools/analyzeAudio';
+import { analyzeAudioStreaming } from './tools/analyzeAudioStreaming';
 
 // Load environment variables
 dotenv.config();
@@ -125,7 +125,7 @@ const agent = new Agent({
   instructions: SIDEKICK_SYSTEM_PROMPT,
   tools: {
     generateMusic,
-    analyzeAudio,
+    analyzeAudio: analyzeAudioStreaming,
     getProjectInfo,
   },
 });
@@ -186,6 +186,18 @@ ipcMain.handle('agent:streamMessage', async (event, { messages, metadata }) => {
           result: part.output,
           status: 'complete'
         });
+      } else if (part.type === 'tool-call-delta' || part.type === 'tool-call-streaming-delta') {
+        console.log('🔄 Tool progress:', part);
+        event.sender.send('agent:streamChunk', { 
+          type: 'tool-progress',
+          toolName: part.toolName,
+          toolCallId: part.toolCallId,
+          delta: part.delta || part,
+          status: 'streaming'
+        });
+      } else {
+        // Log any other event types we might be missing
+        console.log('📦 Unknown stream event type:', part.type, part);
       }
     }
     return { success: true };
