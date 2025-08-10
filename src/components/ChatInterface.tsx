@@ -65,16 +65,20 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <Message from={message.role} className="[&>div]:max-w-full">
-                  <MessageAvatar 
-                    src=""
-                    name={message.role === 'user' ? 'You' : 'AI'}
-                    className={`flex-shrink-0 ${
+                <Message from={message.role} className="[&>div]:max-w-full items-start">
+                  <div
+                    className={`flex-shrink-0 w-7 h-7 rounded flex items-center justify-center ${
                       message.role === "user"
                         ? "bg-[var(--color-accent)] text-black"
                         : "bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
                     }`}
-                  />
+                  >
+                    {message.role === "user" ? (
+                      <User className="w-3 h-3" />
+                    ) : (
+                      <Bot className="w-3 h-3" />
+                    )}
+                  </div>
 
                   <MessageContent
                     className={`max-w-full ${
