@@ -16,17 +16,16 @@ export function ToolCallDisplay({
   return (
     <div className={cn("space-y-2 mt-2", className)}>
       {toolCalls.map((toolCall, index) => {
-        const isGenerating =
-          toolCall.status === "generating" || toolCall.status === "calling";
-        const isComplete =
-          toolCall.status === "complete" || toolCall.type === "tool-result";
+        // AI SDK v5 uses 'state' field
+        const isGenerating = toolCall.state === 'call';
+        const isComplete = toolCall.state === 'result';
 
         const getStatusIcon = () => {
           if (isGenerating) {
             return <Loader2 className="w-3 h-3 animate-spin" />;
           }
-          if (isComplete) {
-            if (toolCall.result?.status === "success") {
+          if (isComplete && toolCall.result) {
+            if (toolCall.result.status === "success") {
               return <CheckCircle className="w-3 h-3 text-green-500" />;
             } else {
               return <XCircle className="w-3 h-3 text-red-500" />;
