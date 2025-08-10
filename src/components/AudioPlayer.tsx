@@ -134,52 +134,42 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration }: Audio
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Use a ref to attach native ondragstart
   const dragRef = useRef<HTMLDivElement>(null);
   
-  useEffect(() => {
-    const element = dragRef.current;
-    if (!element) return;
+  const handleDragStart = async (event: React.DragEvent<HTMLDivElement>) => {
+    if (!localFilePath) {
+      return;
+    }
     
-    const handleDragStart = async (event: DragEvent) => {
-      if (!localFilePath) {
-        return;
-      }
-      
-      event.preventDefault();
-      setIsDragging(true);
-      
-      try {
-        // Use Tauri drag plugin to start native drag
-        await startDrag({
-          item: [localFilePath],
-          // Optionally provide an icon for the drag preview
-          // icon: dragRef.current ? await domToPng(dragRef.current, {
-          //   scale: 2,
-          //   backgroundColor: 'transparent'
-          // }) : undefined
-        });
-      } catch (err) {
-        console.error('Failed to start drag:', err);
-      }
-    };
+    event.preventDefault();
+    setIsDragging(true);
     
-    element.addEventListener('dragstart', handleDragStart);
-    element.addEventListener('dragend', () => setIsDragging(false));
-    
-    return () => {
-      if (element) {
-        element.removeEventListener('dragstart', handleDragStart);
-        element.removeEventListener('dragend', () => setIsDragging(false));
-      }
-    };
-  }, [localFilePath]);
+    try {
+      // Use Tauri drag plugin to start native drag
+      await startDrag({
+        item: [localFilePath],
+        // Optionally provide an icon for the drag preview
+        // icon: dragRef.current ? await domToPng(dragRef.current, {
+        //   scale: 2,
+        //   backgroundColor: 'transparent'
+        // }) : undefined
+      });
+    } catch (err) {
+      console.error('Failed to start drag:', err);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
 
   return (
     <div 
       ref={dragRef}
-      className="flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-text-dim)] rounded px-2 py-1.5 transition-all hover:border-[var(--color-accent)] cursor-move w-full max-w-full"
+      className="flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-text-secondary)]/30 rounded-md px-2 py-1.5 transition-all hover:border-[var(--color-accent)] cursor-move w-full max-w-full"
       draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       title="Drag to Ableton Live"
     >
       <GripVertical size={12} className="text-[var(--color-text-dim)] flex-shrink-0" />

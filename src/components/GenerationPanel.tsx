@@ -90,7 +90,7 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: Ge
             attachedFile={attachedFile}
             onFileRemove={handleFileRemove}
           />
-          <div className="absolute right-2 bottom-4 flex items-center gap-1.5">
+          <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
             <ExpandableModeSelector mode={mode} onModeChange={setMode} />
             <button
               onClick={handleSubmit}
