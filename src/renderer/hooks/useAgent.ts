@@ -4,16 +4,14 @@ import { DefaultChatTransport } from 'ai';
 export function useAgent() {
   const {
     messages,
-    append,
+    sendMessage,
     stop,
     status,
-    reload,
-    input,
-    handleInputChange,
-    handleSubmit,
-    setInput,
+    regenerate,
   } = useChat({
-    api: 'http://localhost:3001/chat',
+    transport: new DefaultChatTransport({
+      api: 'http://localhost:3001/chat',
+    }) as any,
     onFinish: (message) => {
       console.log('Message finished:', message);
     },
@@ -22,14 +20,16 @@ export function useAgent() {
     },
   });
   
-  const sendMessage = (text: string, attachments?: any[]) => {
-    // Use append to send message with experimental_attachments
-    append({
-      role: 'user',
-      content: text,
-    }, {
-      experimental_attachments: attachments,
-    });
+  const sendMessageWithAttachments = (text: string, attachments?: any[]) => {
+    // For now, include file info in the message text
+    // TODO: Figure out how to properly send attachments with v5
+    let finalText = text;
+    if (attachments && attachments.length > 0) {
+      const fileInfo = attachments.map(a => `[Audio file: ${a.name} at ${a.url}]`).join('\n');
+      finalText = `${text}\n\n${fileInfo}`;
+    }
+    
+    sendMessage({ text: finalText });
   };
   
   const cancelMessage = () => {
@@ -37,14 +37,10 @@ export function useAgent() {
   };
   
   return {
-    sendMessage,
-    isProcessing: status === 'in_progress',
+    sendMessage: sendMessageWithAttachments,
+    isProcessing: status === 'submitted' || status === 'streaming',
     cancelMessage,
     messages,
-    reload,
-    input,
-    handleInputChange,
-    handleSubmit,
-    setInput,
+    reload: regenerate
   };
 }
