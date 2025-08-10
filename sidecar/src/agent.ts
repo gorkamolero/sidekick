@@ -6,6 +6,7 @@ import { getMusicGenerationManager } from './music-generation/manager';
 import { AudioService } from './services/audio';
 import { SIDEKICK_SYSTEM_PROMPT } from './prompts';
 import { analyzeAudioStreaming } from './tools/analyzeAudioStreaming';
+import { abletonManual } from './tools/abletonManual';
 
 // Load environment variables
 dotenv.config({ path: '../.env', debug: false });
@@ -150,5 +151,6 @@ export const agent = new Agent({
     analyzeAudio: analyzeAudioStreaming,
     getProjectInfo,
     testComponent,
+    abletonManual,
   },
 });
