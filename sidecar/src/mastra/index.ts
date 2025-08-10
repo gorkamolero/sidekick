@@ -5,9 +5,6 @@ import { createV4CompatibleResponse } from "@mastra/core/agent";
 import * as dotenv from "dotenv";
 import { agent } from "../agent";
 
-// Disable Mastra telemetry warning
-globalThis.___MASTRA_TELEMETRY___ = true;
-
 // Load environment variables
 dotenv.config({ path: "../.env", debug: false });
 
