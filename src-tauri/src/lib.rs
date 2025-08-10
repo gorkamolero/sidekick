@@ -1,5 +1,7 @@
 use std::fs;
 use tauri::Manager;
+use tauri_plugin_shell::ShellExt;
+use serde_json::Value;
 
 #[tauri::command]
 async fn save_audio_file(buffer: Vec<u8>, filename: String) -> Result<String, String> {
@@ -31,7 +33,70 @@ async fn get_temp_audio_path(filename: String) -> Result<String, String> {
     Ok(filepath.to_string_lossy().to_string())
 }
 
-// Agent functionality moved to frontend using AI SDK directly
+// Start the sidecar process
+#[tauri::command]
+async fn start_sidecar(app_handle: tauri::AppHandle) -> Result<String, String> {
+    use tauri_plugin_shell::process::CommandEvent;
+    
+    let sidecar_command = app_handle
+        .shell()
+        .sidecar("sidecar")
+        .map_err(|e| e.to_string())?
+        .env("SIDECAR_PORT", "3001");
+    
+    let (mut rx, _child) = sidecar_command
+        .spawn()
+        .map_err(|e| format!("Failed to spawn sidecar: {}", e))?;
+    
+    // Listen for output
+    tauri::async_runtime::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            match event {
+                CommandEvent::Stdout(line) => {
+                    println!("Sidecar stdout: {}", String::from_utf8_lossy(&line));
+                }
+                CommandEvent::Stderr(line) => {
+                    eprintln!("Sidecar stderr: {}", String::from_utf8_lossy(&line));
+                }
+                CommandEvent::Error(err) => {
+                    eprintln!("Sidecar error: {}", err);
+                }
+                CommandEvent::Terminated(status) => {
+                    println!("Sidecar terminated with status: {:?}", status);
+                    break;
+                }
+                _ => {}
+            }
+        }
+    });
+    
+    Ok("Sidecar started".to_string())
+}
+
+// Call the sidecar API
+#[tauri::command]
+async fn call_sidecar_agent(messages: Vec<Value>, metadata: Option<Value>) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let body = serde_json::json!({
+        "messages": messages,
+        "metadata": metadata
+    });
+    
+    // Call the sidecar HTTP endpoint
+    let response = client
+        .post("http://localhost:3001/agent/stream")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to call sidecar: {}", e))?;
+    
+    let text = response
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read response: {}", e))?;
+    
+    Ok(text)
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -43,7 +108,9 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
         save_audio_file,
         get_project_info,
-        get_temp_audio_path
+        get_temp_audio_path,
+        start_sidecar,
+        call_sidecar_agent
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -54,8 +121,24 @@ pub fn run() {
         )?;
       }
       
-      // Enable drag and drop
-      let _window = app.get_webview_window("main").unwrap();
+      // Get the main window and set it to full height
+      let window = app.get_webview_window("main").unwrap();
+      
+      // Get the current monitor's size
+      if let Some(monitor) = window.current_monitor().unwrap() {
+        let screen_size = monitor.size();
+        let screen_height = screen_size.height;
+        
+        // Set window to full height but keep width at 400px
+        window.set_size(tauri::LogicalSize::new(400.0, screen_height as f64)).unwrap();
+        
+        // Position it at the right edge of the screen (optional)
+        // let screen_width = screen_size.width;
+        // window.set_position(tauri::LogicalPosition::new((screen_width - 400) as f64, 0.0)).unwrap();
+      }
+      
+      // Note: In development, manually run `cd sidecar && npm run dev` 
+      // to start the Mastra server before running the Tauri app
       
       Ok(())
     })

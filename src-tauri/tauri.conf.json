@@ -18,11 +18,17 @@
         "minWidth": 350,
         "minHeight": 600,
         "resizable": true,
+        "maximized": false,
         "fullscreen": false,
         "alwaysOnTop": true,
         "decorations": true,
         "transparent": false,
         "skipTaskbar": false,
+        "dragDropEnabled": true,
+        "windowEffects": {
+          "effects": ["sidebar"],
+          "state": "followsWindowActiveState"
+        },
         "devtools": true
       }
     ],
@@ -39,6 +45,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "externalBin": [
+      "binaries/sidecar"
     ]
   }
 }
