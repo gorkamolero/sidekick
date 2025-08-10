@@ -96,16 +96,18 @@ export type ToolInputProps = ComponentProps<'div'> & {
 };
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
-  <Collapsible defaultOpen={false}>
+  <Collapsible defaultOpen={true}>
     <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-4 py-2 hover:bg-[var(--color-surface)]/50 transition-colors">
       <h4 className="font-medium text-[var(--color-text-dim)] text-xs uppercase tracking-wide">
         Parameters
       </h4>
-      <ChevronDownIcon className="size-3 text-[var(--color-text-dim)] transition-transform group-data-[state=open]:rotate-180" />
+      <ChevronDownIcon className="size-3 text-[var(--color-text-dim)] transition-transform data-[state=open]:rotate-180" />
     </CollapsibleTrigger>
-    <CollapsibleContent className="px-4 pb-4">
-      <div className="rounded-md bg-[var(--color-surface)]/50 border border-[var(--color-text-dim)]/20">
-        <CodeBlock code={JSON.stringify(input, null, 2)} language="json" />
+    <CollapsibleContent className="px-4 pb-4 overflow-hidden transition-all duration-200 ease-in-out data-[state=closed]:animate-[collapse_200ms_ease-out] data-[state=open]:animate-[expand_200ms_ease-out]">
+      <div className="rounded-md bg-[var(--color-surface)]/50 border border-[var(--color-text-dim)]/20 p-2">
+        <pre className="text-[10px] font-mono text-[var(--color-text-primary)] whitespace-pre-wrap overflow-x-auto">
+          {JSON.stringify(input, null, 2)}
+        </pre>
       </div>
     </CollapsibleContent>
   </Collapsible>
