@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import type { ToolUIPart } from 'ai';
+import { CodeBlock } from './code-block';
+
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
@@ -82,7 +84,7 @@ export type ToolContentProps = ComponentProps<typeof CollapsibleContent>;
 export const ToolContent = ({ className, ...props }: ToolContentProps) => (
   <CollapsibleContent
     className={cn(
-      'text-popover-foreground outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2',
+      'text-popover-foreground outline-none overflow-hidden transition-all duration-200 ease-in-out data-[state=closed]:animate-[collapse_200ms_ease-out] data-[state=open]:animate-[expand_200ms_ease-out]',
       className,
     )}
     {...props}
@@ -98,9 +100,9 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
     <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
       Parameters
     </h4>
-    <pre className="rounded-md bg-muted/50 p-3 text-xs overflow-x-auto">
-      {JSON.stringify(input, null, 2)}
-    </pre>
+    <div className="rounded-md bg-muted/50">
+      <CodeBlock code={JSON.stringify(input, null, 2)} language="json" />
+    </div>
   </div>
 );
 

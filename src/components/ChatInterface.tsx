@@ -118,8 +118,8 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                     )}
                     
                     {/* Always show tool calls if available */}
-                    {message.role === "assistant" && message.toolInvocations && (
-                      <ToolCallDisplay toolCalls={message.toolInvocations} />
+                    {message.role === "assistant" && message.parts && (
+                      <ToolCallDisplay message={message} />
                     )}
                   </MessageContent>
                 </Message>

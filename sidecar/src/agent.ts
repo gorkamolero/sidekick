@@ -8,7 +8,7 @@ import { SIDEKICK_SYSTEM_PROMPT } from './prompts';
 import { analyzeAudioStreaming } from './tools/analyzeAudioStreaming';
 
 // Load environment variables
-dotenv.config({ path: '.env', debug: false });
+dotenv.config({ path: '../.env', debug: false });
 
 // Create OpenRouter model
 const openrouter = createOpenRouter({

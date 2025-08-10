@@ -96,3 +96,30 @@ body {
   pointer-events: none;
   z-index: 1000;
 }
+
+/* Tool animations for collapsible content */
+@keyframes expand {
+  0% {
+    height: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes collapse {
+  0% {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    height: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}

@@ -2,73 +2,72 @@ import { Tool, ToolHeader, ToolContent, ToolInput, ToolOutput } from "@/componen
 import { AudioPlayer } from "./AudioPlayer";
 import { cn } from "@/lib/utils";
 import React from "react";
+import type { ToolUIPart } from 'ai';
 
 interface ToolCallDisplayProps {
-  toolCalls?: any[];
+  message: any; // AI SDK v5 message with parts
   className?: string;
 }
 
 export function ToolCallDisplay({
-  toolCalls,
+  message,
   className,
 }: ToolCallDisplayProps) {
-  if (!toolCalls || toolCalls.length === 0) return null;
+  if (!message?.parts) return null;
+
+  // Filter tool parts from message.parts
+  const toolParts = message.parts.filter((part: any) => 
+    part.type.startsWith('tool-')
+  );
+  
+  if (toolParts.length === 0) return null;
 
   // Debug logging to understand the structure
-  console.log('ToolCallDisplay received toolCalls:', toolCalls);
+  console.log('ToolCallDisplay message.parts:', message.parts);
+  console.log('Tool parts:', toolParts);
 
   return (
     <div className={cn("space-y-2 mt-2", className)}>
-      {toolCalls.map((toolCall, index) => {
-        // Debug each tool call
-        console.log(`Tool call ${index}:`, toolCall);
-        console.log('Tool call state:', toolCall.state);
-        console.log('Tool call result:', toolCall.result);
-        console.log('Tool call output:', toolCall.output);
+      {toolParts.map((toolPart: ToolUIPart, index: number) => {
+        // Debug each tool part
+        console.log(`Tool part ${index}:`, toolPart);
+        console.log('Tool part type:', toolPart.type);
+        console.log('Tool part state:', toolPart.state);
         
-        // Map old state to new Tool component states
-        const getToolState = () => {
-          if (toolCall.state === 'call') return 'input-available';
-          if (toolCall.state === 'result') {
-            // Check both result and output fields
-            const result = toolCall.result || toolCall.output;
-            return result?.status === 'success' ? 'output-available' : 'output-error';
-          }
-          return 'input-streaming';
-        };
-
+        // Extract tool name from type (e.g., 'tool-testComponent' -> 'testComponent')
+        const toolName = toolPart.type.replace('tool-', '');
+        
         const getToolDisplayName = () => {
           if (
-            toolCall.toolName === "generate-music" ||
-            toolCall.toolName === "generateMusic"
+            toolName === "generate-music" ||
+            toolName === "generateMusic"
           ) {
             return "Generate Music";
           }
-          if (toolCall.toolName === "analyzeAudio") {
+          if (toolName === "analyzeAudio") {
             return "Analyze Audio";
           }
           if (
-            toolCall.toolName === "getProjectInfo" ||
-            toolCall.toolName === "get-project-info"
+            toolName === "getProjectInfo" ||
+            toolName === "get-project-info"
           ) {
             return "Get Project Info";
           }
-          if (toolCall.toolName === "test-component" || toolCall.toolName === "testComponent") {
+          if (toolName === "test-component" || toolName === "testComponent") {
             return "Test Component";
           }
-          return toolCall.toolName;
+          return toolName;
         };
 
         const renderOutput = () => {
-          // Check both result and output fields (AI SDK v5 might use output)
-          const result = toolCall.result || toolCall.output;
-          if (!result) return null;
+          if (!toolPart.output) return null;
+          const result = toolPart.output;
 
           // Special handling for test component
-          if ((toolCall.toolName === "test-component" || toolCall.toolName === "testComponent")) {
+          if (toolName === "test-component" || toolName === "testComponent") {
             const data = result.componentData;
             return (
-              <div className="p-3 space-y-2">
+              <div className="space-y-2">
                 <div className={cn(
                   "text-sm font-medium",
                   result.status === "success" ? "text-green-600" : "text-red-600"
@@ -86,9 +85,9 @@ export function ToolCallDisplay({
           }
 
           // Special handling for audio analysis
-          if (toolCall.toolName === "analyzeAudio" && result.status === "success") {
+          if (toolName === "analyzeAudio" && result.status === "success") {
             return (
-              <div className="p-3 space-y-2">
+              <div className="space-y-2">
                 <div className="text-sm font-medium text-green-600">
                   ✓ {result.finalMessage || "Analysis complete"}
                 </div>
@@ -116,10 +115,10 @@ export function ToolCallDisplay({
           }
 
           // Special handling for music generation
-          if ((toolCall.toolName === "generate-music" || toolCall.toolName === "generateMusic") && 
+          if ((toolName === "generate-music" || toolName === "generateMusic") && 
               result.status === "success" && result.audioUrl) {
             return (
-              <div className="p-3 space-y-3">
+              <div className="space-y-3">
                 <div className="text-sm font-medium text-green-600">
                   ✓ {result.message || "Music generated successfully"}
                   {result.service && (
@@ -131,7 +130,7 @@ export function ToolCallDisplay({
                 <AudioPlayer
                   audioUrl={result.audioUrl}
                   localFilePath={result.localFilePath}
-                  prompt={result.prompt || toolCall.args?.prompt || ""}
+                  prompt={result.prompt || toolPart.input?.prompt || ""}
                   duration={result.duration || 8}
                 />
               </div>
@@ -140,9 +139,8 @@ export function ToolCallDisplay({
 
           // Default output
           return (
-            <div className="p-3">
+            <div className="text-sm">
               <div className={cn(
-                "text-sm",
                 result.status === "success" ? "text-green-600" : "text-red-600"
               )}>
                 {result.status === "success" ? "✓" : "✗"} {result.message || 
@@ -153,24 +151,19 @@ export function ToolCallDisplay({
         };
 
         return (
-          <Tool key={toolCall.toolCallId || index} defaultOpen={false}>
+          <Tool key={`${toolPart.type}-${index}`} defaultOpen={true}>
             <ToolHeader 
               type={getToolDisplayName()} 
-              state={getToolState()}
+              state={toolPart.state}
             />
             <ToolContent>
-              {toolCall.args && (
-                <ToolInput input={toolCall.args} />
+              {toolPart.input && (
+                <ToolInput input={toolPart.input} />
               )}
-              {toolCall.progressMessage && toolCall.state === 'call' && (
-                <div className="px-4 pb-2 text-xs text-[var(--color-accent)] animate-pulse">
-                  {toolCall.progressMessage}
-                </div>
-              )}
-              {(toolCall.result || toolCall.output) && (
+              {toolPart.output && (
                 <ToolOutput 
                   output={renderOutput()}
-                  errorText={(toolCall.result || toolCall.output)?.status !== "success" ? (toolCall.result || toolCall.output)?.message : undefined}
+                  errorText={toolPart.errorText}
                 />
               )}
             </ToolContent>
