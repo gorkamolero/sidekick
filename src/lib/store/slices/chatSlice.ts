@@ -110,6 +110,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
       if (state.currentConversation && state.currentConversation.messages.length === 0) {
         // Don't create a new conversation, just focus the existing empty one
         return {
+          ...state,
           shouldFocusPrompt: true,
         };
       }

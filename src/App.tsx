@@ -101,7 +101,7 @@ function AppContent() {
     // return () => {
     //   unsubscribe();
     // };
-  }, [setProject, initializeStore, addGeneration, createNewConversation, closeTab, currentConversation, openTabIds]);
+  }, [initializeStore]);
 
   const handleFileDrop = async (file: File) => {
     console.log("🎯 handleFileDrop called with file:", file);

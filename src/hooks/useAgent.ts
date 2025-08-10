@@ -31,7 +31,6 @@ export function useAgent() {
     if (lastConversationId.current === currentConversation?.id) {
       return;
     }
-    
     lastConversationId.current = currentConversation?.id || null;
     lastMessageCount.current = 0; // Reset message count for new conversation
     

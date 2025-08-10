@@ -1,7 +1,6 @@
 use std::fs;
 use tauri::{Manager, Emitter};
 use tauri_plugin_shell::ShellExt;
-use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 use serde_json::Value;
 
 #[tauri::command]
@@ -113,23 +112,6 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_drag::init())
-    .plugin(
-      tauri_plugin_global_shortcut::Builder::new()
-        .with_shortcuts([
-          if cfg!(target_os = "macos") { "cmd+t" } else { "ctrl+t" },
-          if cfg!(target_os = "macos") { "cmd+w" } else { "ctrl+w" }
-        ])?
-        .with_handler(|app, shortcut, event| {
-          if event.state == ShortcutState::Pressed {
-            if shortcut.matches(Modifiers::SUPER, Code::KeyT) || shortcut.matches(Modifiers::CONTROL, Code::KeyT) {
-              let _ = app.emit("new-tab-shortcut", ());
-            } else if shortcut.matches(Modifiers::SUPER, Code::KeyW) || shortcut.matches(Modifiers::CONTROL, Code::KeyW) {
-              let _ = app.emit("close-tab-shortcut", ());
-            }
-          }
-        })
-        .build()
-    )
     .invoke_handler(tauri::generate_handler![
         save_audio_file,
         get_project_info,
@@ -149,6 +131,18 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
       
       // Get the main window and set it to full height
       let window = app.get_webview_window("main").unwrap();
+      
+      // Clone window for the closure
+      let window_clone = window.clone();
+      
+      // Prevent Cmd+W from closing the window
+      window.on_window_event(move |event| {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+          api.prevent_close();
+          // Emit event to frontend to close tab instead
+          let _ = window_clone.emit("close-tab-shortcut", ());
+        }
+      });
       
       // Get the current monitor's size
       if let Some(monitor) = window.current_monitor().unwrap() {

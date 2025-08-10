@@ -1,5 +1,14 @@
 import React, { useEffect, useRef } from "react";
-import { Message, MessageContent } from "@/components/ai-elements/message";
+import { 
+  Conversation, 
+  ConversationContent, 
+  ConversationScrollButton 
+} from "@/components/ai-elements/conversation";
+import { 
+  Message, 
+  MessageContent, 
+  MessageAvatar 
+} from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import { Loader } from "@/components/ai-elements/loader";
 import { Bot, User } from "lucide-react";
@@ -38,8 +47,8 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden">
-      <div className="max-w-4xl mx-auto p-4 space-y-3">
+    <Conversation className="flex-1 bg-[var(--color-void)]">
+      <ConversationContent className="max-w-4xl mx-auto space-y-3">
         <AnimatePresence initial={false}>
           {displayMessages.map((message: any) => {
             const isLastAssistantMessage =
@@ -57,8 +66,10 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                 transition={{ duration: 0.2 }}
               >
                 <Message from={message.role} className="[&>div]:max-w-full">
-                  <div
-                    className={`flex-shrink-0 p-1.5 rounded ${
+                  <MessageAvatar 
+                    src="" 
+                    name={message.role === 'user' ? 'You' : 'Sidekick'}
+                    className={`flex-shrink-0 ${
                       message.role === "user"
                         ? "bg-[var(--color-accent)] text-black"
                         : "bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
@@ -69,7 +80,7 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                     ) : (
                       <Bot className="w-3 h-3" />
                     )}
-                  </div>
+                  </MessageAvatar>
 
                   <MessageContent
                     className={`inline-block max-w-full p-2.5 rounded text-sm ${
@@ -128,7 +139,8 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
           })}
         </AnimatePresence>
         <div ref={messagesEndRef} />
-      </div>
-    </div>
+      </ConversationContent>
+      <ConversationScrollButton className="bg-[var(--color-surface)] border-[var(--color-text-dim)] text-[var(--color-text-primary)] hover:bg-[var(--color-accent)] hover:text-black" />
+    </Conversation>
   );
 }
