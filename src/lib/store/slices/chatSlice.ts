@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { ChatMessage, Conversation } from '../../../types';
 import { ConversationStorage, conversationDB, TabStorage } from '../../db';
+import { generateConversationTitle } from '../../titleGenerator';
 
 export interface ChatSlice {
   currentConversation: Conversation | null;
@@ -10,7 +11,6 @@ export interface ChatSlice {
   attachedFile: File | null;
   shouldFocusPrompt: boolean;
   
-  addMessage: (message: ChatMessage) => void;
   updateMessage: (messageId: string, updates: Partial<ChatMessage>) => void;
   createNewConversation: () => void;
   loadConversation: (conversationId: string) => void;
@@ -22,6 +22,9 @@ export interface ChatSlice {
   initializeStore: () => void;
   clearFocusPrompt: () => void;
   reorderTabs: (newOrder: string[]) => void;
+  regenerateTitle: (conversationId: string) => Promise<void>;
+  setCurrentConversation: (conversation: Conversation) => void;
+  setConversations: (conversations: Conversation[]) => void;
 }
 
 export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
@@ -32,53 +35,6 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
   attachedFile: null,
   shouldFocusPrompt: false,
   
-  addMessage: (message) => 
-    set((state) => {
-      if (!state.currentConversation) {
-        const newConversation: Conversation = {
-          id: crypto.randomUUID(),
-          messages: [message],
-          title: ConversationStorage.generateTitle([message]),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        
-        ConversationStorage.saveCurrentConversationId(newConversation.id).catch(console.error);
-        const updatedConversations = [newConversation, ...state.conversations];
-        ConversationStorage.saveConversations(updatedConversations).catch(console.error);
-        conversationDB.saveConversation(newConversation).catch(console.error);
-        
-        const newTabIds = [...state.openTabIds.slice(0, 9), newConversation.id];
-        TabStorage.save(newTabIds).catch(console.error);
-        
-        return {
-          currentConversation: newConversation,
-          conversations: updatedConversations,
-          openTabIds: newTabIds,
-        };
-      }
-      
-      const updatedConversation = {
-        ...state.currentConversation,
-        messages: [...state.currentConversation.messages, message],
-        updatedAt: new Date(),
-        title: state.currentConversation.title === 'New Conversation' && message.role === 'user'
-          ? ConversationStorage.generateTitle([...state.currentConversation.messages, message])
-          : state.currentConversation.title,
-      };
-      
-      const updatedConversations = state.conversations.map(conv =>
-        conv.id === updatedConversation.id ? updatedConversation : conv
-      );
-      
-      ConversationStorage.saveConversations(updatedConversations).catch(console.error);
-      conversationDB.saveConversation(updatedConversation).catch(console.error);
-      
-      return {
-        currentConversation: updatedConversation,
-        conversations: updatedConversations,
-      };
-    }),
     
   updateMessage: (messageId, updates) =>
     set((state) => {
@@ -105,15 +61,8 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
     }),
     
   createNewConversation: () => {
+    console.log('🆕 CREATE NEW CONVERSATION CALLED');
     set((state) => {
-      // Check if current conversation is empty
-      if (state.currentConversation && state.currentConversation.messages.length === 0) {
-        // Don't create a new conversation, just focus the existing empty one
-        return {
-          ...state,
-          shouldFocusPrompt: true,
-        };
-      }
       
       const newConversation: Conversation = {
         id: crypto.randomUUID(),
@@ -122,9 +71,10 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+      console.log('🆕 CREATING NEW CONVERSATION:', newConversation.id);
       
       const updatedConversations = [newConversation, ...state.conversations];
-      const newTabIds = [...state.openTabIds.filter(id => id !== newConversation.id).slice(0, 9), newConversation.id];
+      const newTabIds = [newConversation.id, ...state.openTabIds.filter(id => id !== newConversation.id).slice(0, 9)];
       
       ConversationStorage.saveConversations(updatedConversations).catch(console.error);
       ConversationStorage.saveCurrentConversationId(newConversation.id).catch(console.error);
@@ -155,6 +105,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
         return { 
           currentConversation: conversation,
           openTabIds: newOpenTabs,
+          attachedFile: null,
         };
       }
       return state;
@@ -232,6 +183,40 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
     TabStorage.save(newOrder).catch(console.error);
     set({ openTabIds: newOrder });
   },
+
+  regenerateTitle: async (conversationId) => {
+    const state = get();
+    const conversation = state.conversations.find(c => c.id === conversationId);
+    
+    if (!conversation || conversation.messages.length === 0) return;
+    
+    try {
+      const newTitle = await generateConversationTitle(conversation.messages);
+      const updatedConversation = { ...conversation, title: newTitle };
+      
+      const updatedConversations = state.conversations.map(conv =>
+        conv.id === conversationId ? updatedConversation : conv
+      );
+      
+      set({
+        conversations: updatedConversations,
+        currentConversation: state.currentConversation?.id === conversationId 
+          ? updatedConversation 
+          : state.currentConversation
+      });
+      
+      ConversationStorage.saveConversations(updatedConversations).catch(console.error);
+      conversationDB.saveConversation(updatedConversation).catch(console.error);
+    } catch (error) {
+      console.error('Failed to regenerate title:', error);
+    }
+  },
+
+  setCurrentConversation: (conversation) =>
+    set({ currentConversation: conversation }),
+
+  setConversations: (conversations) =>
+    set({ conversations }),
     
   initializeStore: async () => {
     try {

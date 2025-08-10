@@ -24,10 +24,14 @@ export const mastra = new Mastra({
       registerApiRoute("/chat", {
         method: "POST",
         handler: async (c) => {
-          const { messages } = await c.req.json();
+          const body = await c.req.json();
+          const { messages } = body;
+          
+          // Extract chatId from the request body (sent by useChat)
+          const chatId = body.chatId || "default";
 
           const stream = await agent.stream(messages, {
-            threadId: "user-session",
+            threadId: chatId,
             resourceId: "sidekick-chat",
           });
 

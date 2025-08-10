@@ -32,11 +32,18 @@ export function ConversationTabs() {
   const openTabs = openTabIds
     .map((id) => conversations.find((c) => c.id === id))
     .filter(Boolean);
+  
+  console.log('RENDER - Current conversation ID:', currentConversation?.id);
+  console.log('RENDER - Open tab IDs:', openTabIds);
+  console.log('RENDER - Open tabs:', openTabs.map(t => t?.id));
 
   return (
     <Tabs.Root 
       value={currentConversation?.id || ""} 
-      onValueChange={(value) => value && loadConversation(value)}
+      onValueChange={(value) => {
+        console.log('TAB CLICKED:', value);
+        if (value) loadConversation(value);
+      }}
       className="flex items-center gap-1 px-3 pt-2 bg-[var(--color-void)] border-b border-[var(--color-text-dim)] overflow-x-auto"
     >
       <Tabs.List className="flex items-center gap-1">
@@ -93,7 +100,10 @@ export function ConversationTabs() {
       </Tabs.List>
 
       <button
-        onClick={createNewConversation}
+        onClick={() => {
+          console.log('NEW TAB BUTTON CLICKED');
+          createNewConversation();
+        }}
         className="
           flex items-center gap-1 px-3 py-1.5 rounded-t
           bg-[var(--color-surface)]/50 hover:bg-[var(--color-surface)]/70

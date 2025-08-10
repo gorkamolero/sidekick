@@ -1,7 +1,7 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useStore } from '../lib/store';
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { updateConversationMessages, updateConversation, loadConversation } from '../lib/db';
 import { generateConversationTitle } from '../lib/titleGenerator';
 
@@ -12,6 +12,7 @@ export function useAgent() {
   const lastTitleUpdate = useRef<string | null>(null);
   const storeRef = useRef({ currentConversation, conversations, setCurrentConversation, setConversations });
   const messagesRef = useRef<any[]>([]);
+  const messagesConversationId = useRef<string | null>(null);
   
   // Update ref when store values change
   useEffect(() => {
@@ -26,6 +27,7 @@ export function useAgent() {
     regenerate,
     setMessages,
   } = useChat({
+    id: currentConversation?.id || 'new',
     transport: new DefaultChatTransport({
       api: 'http://localhost:3001/chat',
     }) as any,
@@ -75,49 +77,28 @@ export function useAgent() {
   
   // Load messages when conversation changes
   useEffect(() => {
-    // Only load if conversation actually changed
     if (lastConversationId.current === currentConversation?.id) {
       return;
     }
     lastConversationId.current = currentConversation?.id || null;
-    lastMessageCount.current = 0; // Reset message count for new conversation
+    lastMessageCount.current = 0;
     
     const loadMessages = async () => {
       if (currentConversation?.id) {
         try {
           const dbConversation = await loadConversation(currentConversation.id);
           if (dbConversation?.messages && dbConversation.messages.length > 0) {
-            console.log('📥 LOADING MESSAGES FROM DB:', dbConversation.messages.length);
-            
-            // Deduplicate messages by ID (keep the last occurrence)
             const messageMap = new Map();
             dbConversation.messages.forEach(msg => {
               messageMap.set(msg.id, msg);
             });
             const deduplicatedMessages = Array.from(messageMap.values());
-            
-            if (deduplicatedMessages.length !== dbConversation.messages.length) {
-              console.warn('🔧 DEDUPLICATING MESSAGES:', dbConversation.messages.length, '→', deduplicatedMessages.length);
-            }
-            
-            // Check for tool parts in loaded messages
-            const messagesWithTools = deduplicatedMessages.filter(msg => 
-              msg.parts?.some(p => p.type?.startsWith('tool-'))
-            );
-            if (messagesWithTools.length) {
-              console.log('🔧 LOADED MESSAGES WITH TOOLS:', messagesWithTools.length);
-              messagesWithTools.forEach(msg => {
-                const toolParts = msg.parts?.filter(p => p.type?.startsWith('tool-'));
-                toolParts?.forEach(part => {
-                  console.log('Loaded tool:', part.type, 'state:', part.state, 'output:', part.output);
-                });
-              });
-            }
-            
             lastMessageCount.current = deduplicatedMessages.length;
             setMessages(deduplicatedMessages);
+            messagesConversationId.current = currentConversation.id;
           } else {
             setMessages([]);
+            messagesConversationId.current = currentConversation.id;
           }
         } catch (error) {
           console.error('Error loading conversation:', error);
@@ -125,14 +106,21 @@ export function useAgent() {
         }
       } else {
         setMessages([]);
+        messagesConversationId.current = null;
       }
     };
     
     loadMessages();
-  }, [currentConversation?.id]); // Remove setMessages from deps to avoid loops
+  }, [currentConversation?.id]);
   
   // Save messages to DB when they change (but not when loading)
   useEffect(() => {
+    // Only save if these messages belong to the current conversation
+    if (messagesConversationId.current !== currentConversation?.id) {
+      console.log('⚠️ SKIPPING SAVE - messages belong to different conversation');
+      return;
+    }
+    
     // Skip saving if we just loaded these messages
     if (messages.length === lastMessageCount.current) {
       return;
@@ -174,14 +162,12 @@ export function useAgent() {
 
   
   const sendMessageWithAttachments = useCallback((text: string, attachments?: any[]) => {
-    let finalText = text;
-    if (attachments && attachments.length > 0) {
-      const fileInfo = attachments.map(a => `[Audio file: ${a.name} at ${a.url}]`).join('\n');
-      finalText = `${text}\n\n${fileInfo}`;
-    }
-    
-    sendMessage({ text: finalText });
-  }, [sendMessage]);
+    messagesConversationId.current = currentConversation?.id || null;
+    sendMessage({ 
+      text,
+      experimental_attachments: attachments 
+    });
+  }, [sendMessage, currentConversation?.id]);
   
   const cancelMessage = useCallback(() => {
     stop();
