@@ -1,16 +1,28 @@
 import React, { useEffect, useRef } from "react";
-import { useStore } from "../lib/store";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import { Loader } from "@/components/ai-elements/loader";
 import { Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToolCallDisplay } from "./ToolCallDisplay";
+import type { UIMessage } from "@ai-sdk/react";
 
-export function ChatInterface() {
-  const { currentConversation } = useStore();
-  const messages = currentConversation?.messages || [];
+interface ChatInterfaceProps {
+  messages: UIMessage[];
+  isProcessing: boolean;
+}
+
+export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  console.log('ChatInterface messages:', messages);
+  if (messages.length > 0) {
+    console.log('Last message details:', {
+      role: messages[messages.length - 1].role,
+      content: messages[messages.length - 1].content,
+      attachments: (messages[messages.length - 1] as any).experimental_attachments,
+    });
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,7 +55,7 @@ export function ChatInterface() {
               message === displayMessages[displayMessages.length - 1] &&
               message.role === "assistant";
             const showLoader =
-              message.isStreaming && isLastAssistantMessage && !message.content && !message.toolCalls;
+              isProcessing && isLastAssistantMessage && !message.content && !message.toolInvocations;
 
             return (
               <motion.div
@@ -76,7 +88,7 @@ export function ChatInterface() {
                     }`}
                   >
                     <div className="text-[10px] text-[var(--color-text-dim)] mb-1 font-mono">
-                      {new Date().toTimeString().slice(0, 8)}
+                      {message.createdAt ? new Date(message.createdAt).toTimeString().slice(0, 8) : new Date().toTimeString().slice(0, 8)}
                     </div>
 
                     {showLoader && (
@@ -87,15 +99,43 @@ export function ChatInterface() {
                     )}
                     
                     {/* Always show content if available */}
-                    {message.content && (
+                    {message.parts && message.parts.length > 0 && (
+                      <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                        {message.parts.filter((p: any) => p.type === "text" && p.text).map((p: any) => p.text).join("\n")}
+                      </Response>
+                    )}
+                    
+                    {/* Show content for messages without parts (fallback) */}
+                    {!message.parts && message.content && (
                       <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
                         {message.content}
                       </Response>
                     )}
                     
+                    {/* Show attached files for user messages */}
+                    {message.role === "user" && message.experimental_attachments && message.experimental_attachments.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {message.experimental_attachments.map((attachment: any, i: number) => (
+                          <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-[var(--color-background)] rounded text-[10px] text-[var(--color-text-dim)]">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                            </svg>
+                            <span>{attachment.name || 'audio file'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
                     {/* Always show tool calls if available */}
-                    {message.role === "assistant" && message.toolCalls && (
-                      <ToolCallDisplay toolCalls={message.toolCalls} />
+                    {message.role === "assistant" && message.toolInvocations && (
+                      <ToolCallDisplay toolCalls={message.toolInvocations.map((tool: any) => ({
+                        type: 'tool-call',
+                        toolName: tool.toolName,
+                        toolCallId: tool.toolCallId,
+                        args: tool.args,
+                        result: tool.result,
+                        status: tool.state === 'result' ? 'complete' : 'generating'
+                      }))} />
                     )}
                   </MessageContent>
                 </Message>

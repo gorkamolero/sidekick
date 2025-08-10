@@ -8,6 +8,7 @@ export interface ChatSlice {
   conversations: Conversation[];
   openTabIds: string[];
   activeView: 'chat' | 'history';
+  attachedFile: File | null;
   
   addMessage: (message: ChatMessage) => void;
   updateMessage: (messageId: string, updates: Partial<ChatMessage>) => void;
@@ -17,6 +18,7 @@ export interface ChatSlice {
   closeTab: (conversationId: string) => void;
   openTab: (conversationId: string) => void;
   setActiveView: (view: 'chat' | 'history') => void;
+  setAttachedFile: (file: File | null) => void;
   initializeStore: () => void;
 }
 
@@ -25,6 +27,7 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
   conversations: [],
   openTabIds: [],
   activeView: 'chat',
+  attachedFile: null,
   
   addMessage: (message) => 
     set((state) => {
@@ -186,6 +189,9 @@ export const createChatSlice: StateCreator<ChatSlice> = (set, get) => ({
   
   setActiveView: (view) => 
     set({ activeView: view }),
+  
+  setAttachedFile: (file) =>
+    set({ attachedFile: file }),
     
   initializeStore: async () => {
     const conversations = ConversationStorage.loadConversations();

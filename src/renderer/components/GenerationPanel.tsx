@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Terminal, Send } from "lucide-react";
 import { useStore } from "../lib/store";
-import { useAgent } from "../hooks/useAgent";
 import { AudioDropZone } from "./AudioDropZone";
 import { GenerationMode } from "./GenerationPanel/ModeSelector";
 import { ExpandableModeSelector } from "./GenerationPanel/ExpandableModeSelector";
@@ -11,14 +10,18 @@ import { ExecuteButton } from "./GenerationPanel/ExecuteButton";
 import { getModeInstructions } from "./GenerationPanel/modeInstructions";
 import tauriAPI from "../lib/tauri-api";
 
-export function GenerationPanel() {
+interface GenerationPanelProps {
+  sendMessage: (text: string, attachments?: any[]) => void;
+  isProcessing: boolean;
+  cancelMessage: () => void;
+}
+
+export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: GenerationPanelProps) {
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<GenerationMode>("loop");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
-  const { currentProject, updateProject, linkState } = useStore();
-  const { sendMessage, isProcessing, cancelMessage } = useAgent();
+  const { currentProject, updateProject, linkState, attachedFile, setAttachedFile } = useStore();
 
   const handleSubmit = async () => {
     const message = prompt.trim();
@@ -26,20 +29,25 @@ export function GenerationPanel() {
 
     setPrompt("");
 
-    // Pass file info through metadata instead of in message text
-    const metadata: any = { mode };
-    if (attachedFile && savedFilePath) {
-      metadata.audioFile = {
-        name: attachedFile.name,
-        path: savedFilePath,
-      };
+    // Prepare attachments if there's a file
+    let attachments: any[] | undefined;
+    if (attachedFile) {
+      const filePath = (attachedFile as any).path || savedFilePath;
+      if (filePath) {
+        // Create an attachment object with the file info
+        attachments = [{
+          name: attachedFile.name,
+          url: filePath, // Use the file path as URL
+          contentType: attachedFile.type || 'audio/*',
+        }];
+      }
       
-      // Clear file immediately after capturing it in metadata
+      // Clear file immediately after capturing it
       setAttachedFile(null);
       setSavedFilePath(null);
     }
 
-    await sendMessage(message, metadata);
+    sendMessage(message, attachments);
   };
 
   const handleAudioFile = async (file: File) => {

@@ -1,36 +1,36 @@
-import React from 'react';
-import { useStore } from '../lib/store';
-import { Plus, X, MessageSquare } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from "react";
+import { useStore } from "../lib/store";
+import { Plus, X, MessageSquare } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function ConversationTabs() {
-  const { 
-    conversations, 
+  const {
+    conversations,
     currentConversation,
     openTabIds,
-    createNewConversation, 
+    createNewConversation,
     loadConversation,
-    closeTab
+    closeTab,
   } = useStore();
 
   const handleCloseTab = (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation(); // Prevent tab selection
-    
+
     // If this is the last tab, create a new one before closing
     if (openTabIds.length === 1) {
       createNewConversation();
     }
-    
+
     closeTab(conversationId);
   };
-  
+
   // Get actual tab conversations
   const openTabs = openTabIds
-    .map(id => conversations.find(c => c.id === id))
+    .map((id) => conversations.find((c) => c.id === id))
     .filter(Boolean);
 
   return (
-    <div className="flex items-center gap-1 px-3 py-2 bg-[var(--color-void)] border-b border-[var(--color-text-dim)] overflow-x-auto">
+    <div className="flex items-center gap-1 px-3 pt-2 bg-[var(--color-void)] border-b border-[var(--color-text-dim)] overflow-x-auto">
       <AnimatePresence mode="popLayout">
         {openTabs.map((conv) => {
           if (!conv) return null;
@@ -45,9 +45,10 @@ export function ConversationTabs() {
               onClick={() => loadConversation(conv.id)}
               className={`
                 relative group flex items-center gap-2 px-3 py-1.5 rounded-t transition-all
-                ${isActive 
-                  ? 'bg-[var(--color-surface)] text-[var(--color-accent)] border-t border-l border-r border-[var(--color-accent)]' 
-                  : 'bg-[var(--color-surface)]/50 text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]/70 border-t border-l border-r border-transparent'
+                ${
+                  isActive
+                    ? "bg-[var(--color-surface)] text-[var(--color-accent)] border-t border-l border-r border-[var(--color-accent)]"
+                    : "bg-[var(--color-surface)]/50 text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]/70 border-t border-l border-r border-transparent"
                 }
                 max-w-[200px] min-w-[120px]
               `}
@@ -65,7 +66,7 @@ export function ConversationTabs() {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+                  if (e.key === "Enter" || e.key === " ") {
                     handleCloseTab(e as any, conv.id);
                   }
                 }}
@@ -82,7 +83,7 @@ export function ConversationTabs() {
           );
         })}
       </AnimatePresence>
-      
+
       <button
         onClick={createNewConversation}
         className="
