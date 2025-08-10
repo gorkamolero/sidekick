@@ -1,21 +1,22 @@
 import React, { useState } from "react";
-import { Terminal, Ear, Send } from "lucide-react";
+import { Terminal, Send } from "lucide-react";
 import { useStore } from "../lib/store";
 import { useAgent } from "../hooks/useAgent";
 import { AudioDropZone } from "./AudioDropZone";
-import { analyzeAudioFile } from "../services/audioAnalysisService";
 import { GenerationMode } from "./GenerationPanel/ModeSelector";
 import { ExpandableModeSelector } from "./GenerationPanel/ExpandableModeSelector";
 import { ProjectInfoDisplay } from "./GenerationPanel/ProjectInfoDisplay";
 import { PromptInput } from "./GenerationPanel/PromptInput";
 import { ExecuteButton } from "./GenerationPanel/ExecuteButton";
 import { getModeInstructions } from "./GenerationPanel/modeInstructions";
+import tauriAPI from "../lib/tauri-api";
 
 export function GenerationPanel() {
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<GenerationMode>("loop");
-  const [showAudioDrop, setShowAudioDrop] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   const { currentProject, updateProject, linkState } = useStore();
   const { sendMessage, isProcessing, cancelMessage } = useAgent();
 
@@ -25,78 +26,64 @@ export function GenerationPanel() {
 
     setPrompt("");
 
-    await sendMessage(message, { mode });
+    // Pass file info through metadata instead of in message text
+    const metadata: any = { mode };
+    if (attachedFile && savedFilePath) {
+      metadata.audioFile = {
+        name: attachedFile.name,
+        path: savedFilePath,
+      };
+      
+      // Clear file immediately after capturing it in metadata
+      setAttachedFile(null);
+      setSavedFilePath(null);
+    }
+
+    await sendMessage(message, metadata);
   };
 
   const handleAudioFile = async (file: File) => {
     setIsAnalyzing(true);
     try {
-      // Analyze locally first for immediate feedback
-      const analysis = await analyzeAudioFile(file);
+      const arrayBuffer = await file.arrayBuffer();
+      const savedPath = await tauriAPI.saveAudioFile(
+        arrayBuffer,
+        file.name,
+      );
 
-      // Format the analysis results as a message
-      const analyzePrompt = `I've analyzed the audio file "${file.name}":
-
-🎵 BPM: ${Math.round(analysis.bpm)}
-🎹 Key: ${analysis.key}
-⚡ Energy: ${Math.round(analysis.energy * 100)}%
-🕺 Danceability: ${Math.round(analysis.danceability * 100)}%
-🎼 Style: ${analysis.style.join(", ")}
-🎤 Instruments: ${analysis.instruments.map((i: any) => i.label).join(", ")}
-
-Would you like me to generate a complementary loop based on these characteristics?`;
-
-      // Send the analysis results to the chat
-      await sendMessage(analyzePrompt);
-
-      // Update project context if needed
-      if (currentProject) {
-        updateProject({
-          bpm: Math.round(analysis.bpm),
-          key: analysis.key,
-        });
-      }
-
-      setShowAudioDrop(false);
+      // Store the file and path for later use - NO automatic analysis
+      setAttachedFile(file);
+      setSavedFilePath(savedPath);
     } catch (error) {
       console.error("Failed to process audio file:", error);
-      // Fallback: just inform about the upload
-      const fallbackPrompt = `I've received the audio file "${file.name}" but couldn't analyze it locally. The file has been uploaded for processing.`;
-      await sendMessage(fallbackPrompt);
-      setShowAudioDrop(false);
+      // Still attach the file even if save fails
+      setAttachedFile(file);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
+  const handleFileRemove = () => {
+    setAttachedFile(null);
+    setSavedFilePath(null);
+  };
+
   return (
     <div>
       <div className="p-3">
-        {showAudioDrop && (
-          <div className="mb-3">
-            <AudioDropZone
-              onFileSelect={handleAudioFile}
-              isAnalyzing={isAnalyzing}
-            />
-          </div>
-        )}
-
         <div className="relative">
           <PromptInput
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleSubmit}
             isProcessing={isProcessing}
+            onFileSelect={handleAudioFile}
+            isAnalyzing={isAnalyzing}
+            attachedFile={attachedFile}
+            onFileRemove={handleFileRemove}
           />
           <div className="absolute right-2 bottom-4 flex items-center gap-1.5">
             <ExpandableModeSelector mode={mode} onModeChange={setMode} />
-            <button
-              onClick={() => setShowAudioDrop(!showAudioDrop)}
-              className="p-1.5 rounded hover:bg-[var(--color-surface)] transition-colors"
-              title="Listen to audio file"
-            >
-              <Ear className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]" />
-            </button>
             <button
               onClick={handleSubmit}
               disabled={!prompt.trim() || isProcessing}
@@ -107,9 +94,38 @@ Would you like me to generate a complementary loop based on these characteristic
             </button>
           </div>
         </div>
+
+        <div className="mt-3 space-y-3">
+          {currentProject ? (
+            <ProjectInfoDisplay
+              project={currentProject}
+              onProjectUpdate={updateProject}
+            />
+          ) : (
+            <div className="p-2 bg-[var(--color-surface)] rounded text-center">
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                No Ableton project detected
+              </p>
+              <button className="mt-1 text-xs text-[var(--color-accent)] hover:underline">
+                Connect to Ableton
+              </button>
+            </div>
+          )}
+
+          {linkState.isConnected && (
+            <div className="p-2 bg-[var(--color-surface)] rounded flex items-center gap-2">
+              <Terminal size={14} className="text-[var(--color-accent)]" />
+              <span className="text-xs text-[var(--color-text-secondary)]">
+                Ableton Link: {linkState.bpm?.toFixed(1)} BPM • {linkState.phase}/{linkState.quantum}
+              </span>
+            </div>
+          )}
+
+          {isProcessing && (
+            <ExecuteButton onClick={cancelMessage} />
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-export type { GenerationMode };

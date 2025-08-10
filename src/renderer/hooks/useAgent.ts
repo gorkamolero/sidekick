@@ -10,7 +10,7 @@ export function useAgent() {
   const abortControllerRef = useRef<AbortController | null>(null);
   
 
-  const sendMessage = useCallback(async (content: string, metadata?: { mode?: string }) => {
+  const sendMessage = useCallback(async (content: string, metadata?: { mode?: string; audioFile?: { name: string; path: string } }) => {
     if (!content.trim() || isProcessing) return;
 
     // Cancel any existing request
@@ -57,10 +57,15 @@ export function useAgent() {
         .filter((m: any) => m.role !== 'system' && m.id !== assistantMessage.id && m.id !== userMessage.id)
         .map((m: any) => ({ role: m.role, content: m.content })) || [];
       
-      // Add the new user message
+      // Add the new user message, with audio file context if provided
+      let messageContent = content.trim();
+      if (metadata?.audioFile) {
+        messageContent = `${content.trim()} [Audio file: ${metadata.audioFile.name} at ${metadata.audioFile.path}]`;
+      }
+      
       const messages = [
         ...previousMessages,
-        { role: 'user' as const, content: content.trim() }
+        { role: 'user' as const, content: messageContent }
       ];
       
       // Add project context as system message if available
@@ -121,6 +126,19 @@ export function useAgent() {
             updateMessage(assistantMessage.id, {
               toolCalls: [...toolCalls],
             });
+          } else if (chunk.type === 'tool-progress') {
+            console.log('🔄 Tool progress in renderer:', chunk);
+            // Update the tool call with progress info
+            const toolIndex = toolCalls.findIndex(t => t.toolCallId === chunk.toolCallId);
+            if (toolIndex >= 0) {
+              toolCalls[toolIndex] = {
+                ...toolCalls[toolIndex],
+                progressMessage: chunk.delta?.message || 'Processing...',
+              };
+              updateMessage(assistantMessage.id, {
+                toolCalls: [...toolCalls],
+              });
+            }
           }
         }
       }); */
