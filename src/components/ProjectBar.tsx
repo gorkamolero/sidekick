@@ -2,7 +2,8 @@ import React from "react";
 import { useStore } from "../lib/store";
 import { MusicServiceSelector } from "./MusicServiceSelector";
 import { ThemeSelector } from "./ThemeSelector";
-import { Archive } from "lucide-react";
+import { Archive, RefreshCw, Zap } from "lucide-react";
+import { useAbleton } from "../hooks/useAbleton";
 
 export function ProjectBar() {
   const {
@@ -12,6 +13,8 @@ export function ProjectBar() {
     setActiveView,
     setProject,
   } = useStore();
+  
+  const { isConnected, isSyncing, syncWithAbleton } = useAbleton();
 
   // Initialize with defaults if no project
   const project = currentProject || {
@@ -137,6 +140,27 @@ export function ProjectBar() {
 
       {/* Controls on the right - compact box */}
       <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          onClick={syncWithAbleton}
+          disabled={!isConnected || isSyncing}
+          className={`flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ${
+            isConnected
+              ? isSyncing
+                ? "bg-[var(--color-accent)]/50 text-[var(--color-accent)] cursor-wait"
+                : "bg-[var(--color-surface)] hover:bg-[var(--color-accent)] hover:text-black text-[var(--color-accent)]"
+              : "bg-[var(--color-surface)] text-[var(--color-text-dim)] cursor-not-allowed opacity-50"
+          }`}
+          title={isConnected ? "Sync with Ableton Live" : "Not connected to Ableton"}
+        >
+          {isSyncing ? (
+            <RefreshCw className="w-3 h-3 animate-spin" />
+          ) : (
+            <Zap className="w-3 h-3" />
+          )}
+          <span className="text-[10px] font-medium">
+            {isConnected ? "SYNC" : "OFFLINE"}
+          </span>
+        </button>
         <MusicServiceSelector />
         <ThemeSelector />
         <button

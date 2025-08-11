@@ -12,6 +12,8 @@ pub struct AbletonInfo {
     pub current_time: f32,
     pub scene_count: i32,
     pub track_count: i32,
+    pub signature_numerator: i32,
+    pub signature_denominator: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,6 +48,24 @@ fn get_ableton_user_library_path() -> Result<PathBuf, String> {
 /// Install AbletonOSC to Ableton's Remote Scripts folder
 #[tauri::command]
 pub async fn install_ableton_osc() -> Result<InstallResult, String> {
+    // First, close Ableton if it's running
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("pkill")
+            .args(&["-x", "Live"])
+            .output();
+        // Wait a moment for Ableton to close
+        std::thread::sleep(std::time::Duration::from_secs(2));
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("taskkill")
+            .args(&["/IM", "Ableton Live*.exe", "/F"])
+            .output();
+        std::thread::sleep(std::time::Duration::from_secs(2));
+    }
+    
     let remote_scripts_path = get_ableton_user_library_path()?;
     
     // Create the Remote Scripts directory if it doesn't exist
@@ -58,28 +78,77 @@ pub async fn install_ableton_osc() -> Result<InstallResult, String> {
     
     // Check if AbletonOSC is already installed
     if target_path.exists() {
-        return Ok(InstallResult {
-            success: true,
-            message: "AbletonOSC is already installed".to_string(),
-            path: Some(target_path.to_string_lossy().to_string()),
-        });
+        // Remove old installation to ensure clean install
+        fs::remove_dir_all(&target_path)
+            .map_err(|e| format!("Failed to remove old installation: {}", e))?;
     }
     
-    // Resources are in the project root, not src-tauri
-    let source_path = Path::new("../resources/ableton/AbletonOSC");
+    // Download AbletonOSC ZIP from GitHub
+    let temp_dir = std::env::temp_dir();
+    let zip_path = temp_dir.join("AbletonOSC.zip");
+    let extract_dir = temp_dir.join("AbletonOSC-extract");
     
-    if !source_path.exists() {
-        return Err(format!("AbletonOSC source files not found at: {:?}", source_path));
+    // Clean up any existing temp files
+    if extract_dir.exists() {
+        fs::remove_dir_all(&extract_dir)
+            .map_err(|e| format!("Failed to clean temp directory: {}", e))?;
     }
     
-    // Copy AbletonOSC to the Remote Scripts folder
+    // Download the ZIP file
+    let output = std::process::Command::new("curl")
+        .args(&["-L", "-o", zip_path.to_str().unwrap(), "https://github.com/ideoforms/AbletonOSC/archive/refs/heads/master.zip"])
+        .output()
+        .map_err(|e| format!("Failed to download AbletonOSC: {}. Make sure curl is installed.", e))?;
+    
+    if !output.status.success() {
+        return Err(format!("Failed to download AbletonOSC: {}", String::from_utf8_lossy(&output.stderr)));
+    }
+    
+    // Unzip the file
+    let output = std::process::Command::new("unzip")
+        .args(&["-q", zip_path.to_str().unwrap(), "-d", extract_dir.to_str().unwrap()])
+        .output()
+        .map_err(|e| format!("Failed to unzip AbletonOSC: {}", e))?;
+    
+    if !output.status.success() {
+        return Err(format!("Failed to unzip AbletonOSC: {}", String::from_utf8_lossy(&output.stderr)));
+    }
+    
+    // The extracted folder will be named AbletonOSC-master
+    let source_path = extract_dir.join("AbletonOSC-master");
+    
+    // Copy to the Remote Scripts folder with the correct name
     copy_dir_recursive(&source_path, &target_path)
         .map_err(|e| format!("Failed to copy AbletonOSC: {}", e))?;
+    
+    // Clean up temp files
+    let _ = fs::remove_file(&zip_path);
+    let _ = fs::remove_dir_all(&extract_dir);
+    
+    // Reopen Ableton
+    #[cfg(target_os = "macos")]
+    {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        // Try to open any version of Ableton Live
+        let _ = std::process::Command::new("open")
+            .args(&["-b", "com.ableton.live"])
+            .output();
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        // Try to find and launch Ableton
+        let program_files = std::env::var("ProgramFiles").unwrap_or_else(|_| "C:\\Program Files".to_string());
+        let ableton_path = format!("{}\\Ableton\\Live 12 Suite\\Program\\Ableton Live 12 Suite.exe", program_files);
+        if Path::new(&ableton_path).exists() {
+            let _ = std::process::Command::new(&ableton_path).spawn();
+        }
+    }
     
     Ok(InstallResult {
         success: true,
         message: format!(
-            "AbletonOSC installed successfully. Please restart Ableton Live and select 'AbletonOSC' in Preferences > Link/MIDI > Control Surface"
+            "AbletonOSC installed successfully! Ableton is restarting.\nPlease:\n1. Go to Preferences > Link/Tempo/MIDI\n2. Select 'AbletonOSC' from Control Surface dropdown"
         ),
         path: Some(target_path.to_string_lossy().to_string()),
     })
@@ -90,6 +159,11 @@ pub async fn install_ableton_osc() -> Result<InstallResult, String> {
 pub async fn check_ableton_osc_installed() -> Result<bool, String> {
     let remote_scripts_path = get_ableton_user_library_path()?;
     let target_path = remote_scripts_path.join("AbletonOSC");
+    
+    // Log the path we're checking
+    println!("Checking for AbletonOSC at: {:?}", target_path);
+    println!("Path exists: {}", target_path.exists());
+    
     Ok(target_path.exists())
 }
 
@@ -123,7 +197,7 @@ impl OscClient {
         let socket = UdpSocket::bind("0.0.0.0:11001")
             .map_err(|e| format!("Failed to bind OSC socket: {}", e))?;
         
-        socket.set_read_timeout(Some(Duration::from_secs(2)))
+        socket.set_read_timeout(Some(Duration::from_millis(500)))
             .map_err(|e| format!("Failed to set socket timeout: {}", e))?;
         
         let ableton_addr = "127.0.0.1:11000".parse()
@@ -165,15 +239,28 @@ impl OscClient {
 /// Test OSC connection to Ableton
 #[tauri::command]
 pub async fn test_ableton_connection() -> Result<bool, String> {
-    let client = OscClient::new()?;
+    // Try to create the client first
+    let client = match OscClient::new() {
+        Ok(c) => c,
+        Err(_) => return Ok(false),
+    };
     
-    // Send a simple query to get the tempo
-    client.send_message("/live/song/get/tempo", vec![])?;
+    // Send a ping message that AbletonOSC responds to
+    if let Err(_) = client.send_message("/live/test", vec![]) {
+        return Ok(false);
+    }
     
-    // Try to receive a response
+    // Try to receive any response
     match client.receive_message() {
         Ok(_) => Ok(true),
-        Err(_) => Ok(false),
+        Err(_) => {
+            // Try alternative message
+            if let Ok(_) = client.send_message("/live/song/get/tempo", vec![]) {
+                Ok(client.receive_message().is_ok())
+            } else {
+                Ok(false)
+            }
+        }
     }
 }
 
@@ -197,6 +284,16 @@ pub async fn get_ableton_info() -> Result<AbletonInfo, String> {
     let time_response = client.receive_message()?;
     let current_time = extract_float_from_response(time_response)?;
     
+    // Get time signature numerator
+    client.send_message("/live/song/get/signature_numerator", vec![])?;
+    let sig_num_response = client.receive_message()?;
+    let signature_numerator = extract_int_from_response(sig_num_response).unwrap_or(4);
+    
+    // Get time signature denominator  
+    client.send_message("/live/song/get/signature_denominator", vec![])?;
+    let sig_denom_response = client.receive_message()?;
+    let signature_denominator = extract_int_from_response(sig_denom_response).unwrap_or(4);
+    
     // Get scene count
     client.send_message("/live/song/get/num_scenes", vec![])?;
     let scenes_response = client.receive_message()?;
@@ -213,7 +310,24 @@ pub async fn get_ableton_info() -> Result<AbletonInfo, String> {
         current_time,
         scene_count,
         track_count,
+        signature_numerator,
+        signature_denominator,
     })
+}
+
+fn extract_int_from_response(packet: OscPacket) -> Result<i32, String> {
+    match packet {
+        OscPacket::Message(msg) => {
+            if let Some(OscType::Int(val)) = msg.args.get(0) {
+                Ok(*val)
+            } else if let Some(OscType::Float(val)) = msg.args.get(0) {
+                Ok(*val as i32)
+            } else {
+                Err("Response did not contain an integer value".to_string())
+            }
+        }
+        _ => Err("Response was not a message".to_string())
+    }
 }
 
 /// Start/stop playback in Ableton
@@ -268,16 +382,3 @@ fn extract_bool_from_response(packet: OscPacket) -> Result<bool, String> {
     }
 }
 
-fn extract_int_from_response(packet: OscPacket) -> Result<i32, String> {
-    match packet {
-        OscPacket::Message(msg) => {
-            msg.args.get(0)
-                .and_then(|arg| match arg {
-                    OscType::Int(i) => Some(*i),
-                    _ => None,
-                })
-                .ok_or("Expected int in response".to_string())
-        }
-        _ => Err("Expected OSC message".to_string()),
-    }
-}

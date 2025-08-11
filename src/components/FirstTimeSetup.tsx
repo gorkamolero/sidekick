@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { X, CheckCircle, AlertCircle, Loader2, Music, Download, ArrowRight } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Loader2, Download, ArrowRight } from 'lucide-react';
 import { AbletonOSC } from '../lib/ableton-osc';
 
 interface FirstTimeSetupProps {
@@ -19,6 +19,14 @@ export function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
   useEffect(() => {
     checkAbletonOSC();
   }, []);
+  
+  // Auto-complete if already connected
+  useEffect(() => {
+    if (isConnected && !isChecking) {
+      // Already connected, skip setup
+      onComplete();
+    }
+  }, [isConnected, isChecking, onComplete]);
 
   const checkAbletonOSC = async () => {
     setIsChecking(true);
@@ -63,9 +71,6 @@ export function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-gray-900 rounded-xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-500/20 mb-4">
-            <Music className="w-8 h-8 text-purple-400" />
-          </div>
           <h1 className="text-3xl font-bold mb-2">Connect to Ableton Live</h1>
           <p className="text-gray-400">Let's set up the connection to your DAW</p>
         </div>
@@ -92,13 +97,13 @@ export function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
                 <h3 className="font-medium">
                   {isChecking ? 'Checking AbletonOSC...' :
                    isConnected ? 'Connected to Ableton Live' :
-                   isInstalled ? 'AbletonOSC installed (Ableton not running)' :
+                   isInstalled ? 'AbletonOSC installed (Not configured in Ableton)' :
                    'AbletonOSC not installed'}
                 </h3>
                 <p className="text-sm text-gray-400 mt-1">
                   {isChecking ? 'Looking for AbletonOSC in your Ableton installation' :
                    isConnected ? 'Ready to sync with your DAW' :
-                   isInstalled ? 'Please open Ableton Live to connect' :
+                   isInstalled ? 'Configure AbletonOSC in Ableton Preferences > Link/MIDI > Control Surface' :
                    'Required for DAW integration'}
                 </p>
               </div>
@@ -144,10 +149,12 @@ export function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
 
           {isInstalled && !isConnected && (
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-              <h3 className="font-medium text-blue-400 mb-2">Next Steps:</h3>
+              <h3 className="font-medium text-blue-400 mb-2">Configure AbletonOSC in Ableton:</h3>
               <ol className="text-sm text-blue-400/80 space-y-1 list-decimal list-inside">
-                <li>Open Ableton Live</li>
-                <li>The AbletonOSC device will load automatically</li>
+                <li>Open Ableton Preferences (Cmd+, or Ctrl+,)</li>
+                <li>Go to Link/Tempo/MIDI tab</li>
+                <li>In Control Surface dropdown, select "AbletonOSC"</li>
+                <li>Leave Input and Output as "None"</li>
                 <li>Sidekick will connect automatically</li>
               </ol>
             </div>

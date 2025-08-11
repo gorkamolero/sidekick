@@ -6,6 +6,8 @@ export interface AbletonInfo {
   current_time: number;
   scene_count: number;
   track_count: number;
+  signature_numerator: number;
+  signature_denominator: number;
 }
 
 export interface InstallResult {
@@ -16,7 +18,7 @@ export interface InstallResult {
 
 export class AbletonOSC {
   private static instance: AbletonOSC;
-  private isConnected: boolean = false;
+  private isConnected = false;
   private connectionCheckInterval?: NodeJS.Timeout;
 
   private constructor() {}
@@ -112,7 +114,7 @@ export class AbletonOSC {
   /**
    * Start automatic connection checking
    */
-  startConnectionMonitoring(callback: (connected: boolean) => void, interval: number = 5000): void {
+  startConnectionMonitoring(callback: (connected: boolean) => void, interval = 5000): void {
     this.stopConnectionMonitoring();
     
     // Initial check
