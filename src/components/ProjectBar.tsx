@@ -24,11 +24,7 @@ export function ProjectBar() {
 
   const handleSync = async () => {
     const success = await syncWithAbleton();
-    if (success) {
-      toast.success("Synced with Ableton Live", {
-        description: `BPM: ${project.bpm}, Time Signature: ${project.timeSignature}`,
-      });
-    } else {
+    if (!success) {
       toast.error("Failed to sync", {
         description: "Could not connect to Ableton Live",
       });

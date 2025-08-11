@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AbletonOSC } from '../lib/ableton-osc';
 import { useStore } from '../lib/store';
+import { toast } from 'sonner';
 
 export function useAbleton() {
   const [isConnected, setIsConnected] = useState(false);
@@ -10,22 +11,36 @@ export function useAbleton() {
   const { currentProject, updateProject } = useStore();
   const abletonOSC = AbletonOSC.getInstance();
   
-  // Manual sync function
   const syncWithAbleton = useCallback(async () => {
     setIsSyncing(true);
     try {
       const info = await abletonOSC.getInfo();
-      if (info) {
-        // Format time signature from numerator/denominator
+      if (info && currentProject) {
         const timeSignature = `${info.signature_numerator}/${info.signature_denominator}`;
+        const newBpm = Math.round(info.tempo);
         
-        updateProject({
-          bpm: Math.round(info.tempo),
-          timeSignature: timeSignature,
-          // Note: Musical key is not available via AbletonOSC API
-          // Would need Max4Live device or MIDI analysis to get key
-        });
-        setLastSyncTime(new Date());
+        const bpmChanged = newBpm !== currentProject.bpm;
+        const sigChanged = timeSignature !== currentProject.timeSignature;
+        
+        if (bpmChanged || sigChanged) {
+          updateProject({
+            bpm: newBpm,
+            timeSignature: timeSignature,
+          });
+          setLastSyncTime(new Date());
+          
+          const changes = [];
+          if (bpmChanged) changes.push(`BPM: ${currentProject.bpm} → ${newBpm}`);
+          if (sigChanged) changes.push(`Time Signature: ${currentProject.timeSignature} → ${timeSignature}`);
+          
+          toast.success("Synced with Ableton Live", {
+            description: changes.join(', '),
+          });
+        } else {
+          toast.info("Already in sync", {
+            description: `BPM: ${newBpm}, Time Signature: ${timeSignature}`,
+          });
+        }
         return true;
       }
       return false;
@@ -35,7 +50,7 @@ export function useAbleton() {
     } finally {
       setIsSyncing(false);
     }
-  }, [abletonOSC, updateProject]);
+  }, [abletonOSC, updateProject, currentProject]);
   
   // Auto-sync and connection monitoring
   useEffect(() => {
@@ -53,14 +68,28 @@ export function useAbleton() {
           const info = await abletonOSC.getInfo();
           if (info) {
             const timeSignature = `${info.signature_numerator}/${info.signature_denominator}`;
+            const newBpm = Math.round(info.tempo);
+            
+            // Check what changed
+            const bpmChanged = newBpm !== currentProject.bpm;
+            const sigChanged = timeSignature !== currentProject.timeSignature;
             
             // Only update if values changed
-            if (info.tempo !== currentProject.bpm || timeSignature !== currentProject.timeSignature) {
+            if (bpmChanged || sigChanged) {
               updateProject({
-                bpm: Math.round(info.tempo),
+                bpm: newBpm,
                 timeSignature: timeSignature,
               });
               setLastSyncTime(new Date());
+              
+              // Show toast with what changed
+              const changes = [];
+              if (bpmChanged) changes.push(`BPM: ${currentProject.bpm} → ${newBpm}`);
+              if (sigChanged) changes.push(`Time Signature: ${currentProject.timeSignature} → ${timeSignature}`);
+              
+              toast.info("Ableton sync detected changes", {
+                description: changes.join(', '),
+              });
             }
           }
         }
