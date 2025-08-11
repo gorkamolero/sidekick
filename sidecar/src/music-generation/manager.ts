@@ -8,7 +8,7 @@ let managerInstance: MusicGenerationManager | null = null;
 export function getMusicGenerationManager(): MusicGenerationManager {
   if (!managerInstance) {
     managerInstance = new MusicGenerationManager({
-      activeService: 'musicgen',
+      activeService: 'suno',
       serviceConfigs: {}
     });
 
@@ -29,7 +29,7 @@ export function getMusicGenerationManager(): MusicGenerationManager {
       const sunoConfig: SunoConfig = {
         apiKey: process.env.SUNO_API_KEY,
         baseUrl: process.env.SUNO_API_URL || 'https://api.sunoapi.org',
-        defaultModel: 'v4',
+        defaultModel: 'V4',
         streamingEnabled: true,
         pollingInterval: 2000,
         maxPollingAttempts: 120
@@ -37,6 +37,8 @@ export function getMusicGenerationManager(): MusicGenerationManager {
 
       const sunoAdapter = new SunoAdapter(sunoConfig);
       managerInstance.registerService('suno', sunoAdapter);
+      managerInstance.setActiveService('suno');
+      console.log('✅ Suno service registered and set as active');
     }
   }
 
