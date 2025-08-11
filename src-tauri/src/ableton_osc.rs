@@ -45,7 +45,7 @@ fn get_ableton_user_library_path() -> Result<PathBuf, String> {
 
 /// Install AbletonOSC to Ableton's Remote Scripts folder
 #[tauri::command]
-pub async fn install_ableton_osc() -> Result<InstallResult, String> {
+pub async fn install_ableton_osc(app_handle: tauri::AppHandle) -> Result<InstallResult, String> {
     let remote_scripts_path = get_ableton_user_library_path()?;
     
     // Create the Remote Scripts directory if it doesn't exist
@@ -65,16 +65,25 @@ pub async fn install_ableton_osc() -> Result<InstallResult, String> {
         });
     }
     
-    // Get the source AbletonOSC folder from resources
-    let source_path = Path::new("resources/ableton/AbletonOSC");
+    // Get the source AbletonOSC folder from resources using Tauri's resource resolver
+    let resource_path = app_handle.path_resolver()
+        .resolve_resource("resources/ableton/AbletonOSC")
+        .ok_or_else(|| "AbletonOSC source files not found in resources".to_string())?;
     
-    if !source_path.exists() {
-        return Err("AbletonOSC source files not found in resources".to_string());
+    if !resource_path.exists() {
+        // Try the development path
+        let dev_path = Path::new("resources/ableton/AbletonOSC");
+        if dev_path.exists() {
+            copy_dir_recursive(dev_path, &target_path)
+                .map_err(|e| format!("Failed to copy AbletonOSC: {}", e))?;
+        } else {
+            return Err(format!("AbletonOSC source files not found. Tried: {:?} and resources/ableton/AbletonOSC", resource_path));
+        }
+    } else {
+        // Copy AbletonOSC to the Remote Scripts folder
+        copy_dir_recursive(&resource_path, &target_path)
+            .map_err(|e| format!("Failed to copy AbletonOSC: {}", e))?;
     }
-    
-    // Copy AbletonOSC to the Remote Scripts folder
-    copy_dir_recursive(source_path, &target_path)
-        .map_err(|e| format!("Failed to copy AbletonOSC: {}", e))?;
     
     Ok(InstallResult {
         success: true,
