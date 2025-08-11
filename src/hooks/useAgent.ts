@@ -13,6 +13,7 @@ export function useAgent() {
   const storeRef = useRef({ currentConversation, conversations, setCurrentConversation, setConversations });
   const messagesRef = useRef<any[]>([]);
   const messagesConversationId = useRef<string | null>(null);
+  const isSaving = useRef<boolean>(false);
   
   // Update ref when store values change
   useEffect(() => {
@@ -115,6 +116,11 @@ export function useAgent() {
   
   // Save messages to DB when they change (but not when loading)
   useEffect(() => {
+    // Prevent concurrent saves
+    if (isSaving.current) {
+      return;
+    }
+    
     // Only save if these messages belong to the current conversation
     if (messagesConversationId.current !== currentConversation?.id) {
       console.log('⚠️ SKIPPING SAVE - messages belong to different conversation');
@@ -142,6 +148,7 @@ export function useAgent() {
     
     // Save to DB
     if (currentConversation?.id && messages.length > 0) {
+      isSaving.current = true;
       console.log('💾 SAVING MESSAGES TO DB:', messages.length);
       const lastMessage = messages[messages.length - 1];
       console.log('Sample message parts:', lastMessage?.parts);
@@ -155,7 +162,11 @@ export function useAgent() {
         });
       }
       
-      updateConversationMessages(currentConversation.id, messages).catch(console.error);
+      updateConversationMessages(currentConversation.id, messages)
+        .catch(console.error)
+        .finally(() => {
+          isSaving.current = false;
+        });
       
     }
   }, [messages.length, currentConversation?.id]);
@@ -163,6 +174,7 @@ export function useAgent() {
   
   const sendMessageWithAttachments = useCallback((text: string, attachments?: any[]) => {
     messagesConversationId.current = currentConversation?.id || null;
+    
     sendMessage({ 
       text,
       experimental_attachments: attachments 

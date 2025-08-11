@@ -11,6 +11,8 @@ import {
 } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import { Loader } from "@/components/ai-elements/loader";
+import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
+import { Task, TaskContent, TaskItem, TaskTrigger } from "@/components/ai-elements/task";
 import { Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToolCallDisplay } from "./ToolCallDisplay";
@@ -93,6 +95,22 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                       </div>
                     )}
                     
+                    {/* Show reasoning - check multiple possible locations */}
+                    {(message.reasoning || 
+                      message.experimental_reasoning ||
+                      (message.parts && message.parts.some((p: any) => p.type === "reasoning" || p.type === "thinking"))) && (
+                      <Reasoning className="mb-2" isStreaming={showLoader}>
+                        <ReasoningTrigger />
+                        <ReasoningContent>
+                          {message.reasoning || 
+                           message.experimental_reasoning ||
+                           message.parts?.filter((p: any) => p.type === "reasoning" || p.type === "thinking")
+                             .map((p: any) => p.reasoning || p.thinking || p.text || p.content)
+                             .join("\n")}
+                        </ReasoningContent>
+                      </Reasoning>
+                    )}
+                    
                     {/* Always show content if available */}
                     {message.parts && message.parts.length > 0 && (
                       <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
@@ -121,6 +139,32 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                       </div>
                     )}
                     
+                    {/* Show task progress for tool calls */}
+                    {message.role === "assistant" && message.parts && message.parts.some((p: any) => p.type?.startsWith('tool-')) && (
+                      <Task className="mb-2">
+                        <TaskTrigger 
+                          title="Music Generation Task"
+                          status={showLoader ? 'in-progress' : 'completed'}
+                          count={message.parts.filter((p: any) => p.type?.startsWith('tool-')).length}
+                        />
+                        <TaskContent>
+                          {message.parts
+                            .filter((p: any) => p.type?.startsWith('tool-'))
+                            .map((part: any, i: number) => (
+                              <TaskItem 
+                                key={i}
+                                status={
+                                  part.state === 'output-available' ? 'completed' :
+                                  part.state === 'input-available' ? 'in-progress' : 'pending'
+                                }
+                              >
+                                {part.type.replace('tool-', '')} - {part.toolName || 'Processing'}
+                              </TaskItem>
+                            ))}
+                        </TaskContent>
+                      </Task>
+                    )}
+
                     {/* Always show tool calls if available */}
                     {message.role === "assistant" && message.parts && (
                       <ToolCallDisplay message={message} />

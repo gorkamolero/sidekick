@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { X, Music } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import {
@@ -20,10 +20,13 @@ interface PromptInputProps {
   onFileRemove?: () => void;
 }
 
-export function PromptInput({ prompt, onPromptChange, onSubmit, isProcessing, onFileSelect, isAnalyzing, attachedFile, onFileRemove }: PromptInputProps) {
+export const PromptInput = forwardRef<HTMLTextAreaElement, PromptInputProps>(
+  ({ prompt, onPromptChange, onSubmit, isProcessing, onFileSelect, isAnalyzing, attachedFile, onFileRemove }, ref) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const { shouldFocusPrompt, clearFocusPrompt } = useStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  useImperativeHandle(ref, () => textareaRef.current!);
 
   // Auto-focus on mount and when processing completes
   useEffect(() => {
@@ -133,4 +136,4 @@ export function PromptInput({ prompt, onPromptChange, onSubmit, isProcessing, on
       </AIPromptInput>
     </div>
   );
-}
+});

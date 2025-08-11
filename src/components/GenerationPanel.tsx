@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Terminal, Send } from "lucide-react";
 import { useStore } from "../lib/store";
 import { AudioDropZone } from "./AudioDropZone";
@@ -8,6 +8,7 @@ import { ProjectInfoDisplay } from "./GenerationPanel/ProjectInfoDisplay";
 import { PromptInput } from "./GenerationPanel/PromptInput";
 import { ExecuteButton } from "./GenerationPanel/ExecuteButton";
 import { getModeInstructions } from "./GenerationPanel/modeInstructions";
+import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
 import tauriAPI from "../lib/tauri-api";
 
 interface GenerationPanelProps {
@@ -22,6 +23,7 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: Ge
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   const { currentProject, updateProject, linkState, attachedFile, setAttachedFile } = useStore();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = async () => {
     const message = prompt.trim();
@@ -79,8 +81,43 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: Ge
   return (
     <div>
       <div className="p-3">
+        {/* Quick suggestions */}
+        {!prompt && !attachedFile && (
+          <Suggestions className="mb-2">
+            <Suggestion 
+              suggestion="Generate dark techno loop" 
+              onClick={(text) => {
+                setPrompt(text);
+                setTimeout(() => inputRef.current?.focus(), 0);
+              }}
+            />
+            <Suggestion 
+              suggestion="Analyze this audio" 
+              onClick={(text) => {
+                setPrompt(text);
+                setTimeout(() => inputRef.current?.focus(), 0);
+              }}
+            />
+            <Suggestion 
+              suggestion="Create ambient pad" 
+              onClick={(text) => {
+                setPrompt(text);
+                setTimeout(() => inputRef.current?.focus(), 0);
+              }}
+            />
+            <Suggestion 
+              suggestion="Make it more energetic" 
+              onClick={(text) => {
+                setPrompt(text);
+                setTimeout(() => inputRef.current?.focus(), 0);
+              }}
+            />
+          </Suggestions>
+        )}
+
         <div className="relative">
           <PromptInput
+            ref={inputRef}
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleSubmit}
