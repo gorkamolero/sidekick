@@ -15,9 +15,10 @@ interface GenerationPanelProps {
   sendMessage: (text: string, attachments?: any[]) => void;
   isProcessing: boolean;
   cancelMessage: () => void;
+  messages?: any[];
 }
 
-export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: GenerationPanelProps) {
+export function GenerationPanel({ sendMessage, isProcessing, cancelMessage, messages = [] }: GenerationPanelProps) {
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<GenerationMode>("loop");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -89,8 +90,8 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: Ge
   return (
     <div>
       <div className="p-3">
-        {/* Quick suggestions */}
-        {!prompt && !attachedFile && (
+        {/* Quick suggestions - only show when no messages in conversation */}
+        {!prompt && !attachedFile && !isProcessing && messages.length === 0 && (
           <Suggestions className="mb-2">
             <Suggestion 
               suggestion="Generate dark techno loop" 
