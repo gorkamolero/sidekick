@@ -133,8 +133,7 @@ export function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
 
 
         {/* Requirements Checklist */}
-        {!isNotInTauri && (
-          <div className="space-y-4">
+        <div className="space-y-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Package className="w-5 h-5" />
               Checking Requirements
@@ -188,10 +187,9 @@ export function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
               ))}
             </div>
           </div>
-        )}
 
         {/* Manual Fix Instructions */}
-        {hasErrors && !isNotInTauri && (
+        {hasErrors && (
           <div className="p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
             <h3 className="font-semibold text-yellow-400 mb-3">Manual Setup Required</h3>
             <ol className="space-y-2 text-sm">
