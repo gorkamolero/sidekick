@@ -154,7 +154,9 @@ export const analyzeAudio = createTool({
 • **Spectral Centroid**: ${analysis.spectralCentroid?.toFixed(0)} Hz (brightness)
 • **Spectral Rolloff**: ${analysis.spectralRolloff?.toFixed(0)} Hz  
 • **Zero Crossing Rate**: ${(analysis.zeroCrossingRate * 1000)?.toFixed(1)} (texture)
-• **Onset Rate**: ${analysis.onsetRate?.toFixed(2)} events/sec
+• **Onset Rate**: ${analysis.onsetRate?.toFixed(2)} events/sec${analysis.chords && analysis.chords.length > 0 ? `
+• **Chord Progression**: ${analysis.chords.map(c => c.chord).join(' → ')}
+• **Chord Changes**: ${analysis.chords.length} changes detected` : ''}
 
 **Creative Analysis:**
 ${creativeAnalysis.text}`,
@@ -182,7 +184,9 @@ ${creativeAnalysis.text}`,
 • **Spectral Centroid**: ${analysis.spectralCentroid?.toFixed(0)} Hz (brightness)
 • **Spectral Rolloff**: ${analysis.spectralRolloff?.toFixed(0)} Hz
 • **Zero Crossing Rate**: ${(analysis.zeroCrossingRate * 1000)?.toFixed(1)} (texture)
-• **Onset Rate**: ${analysis.onsetRate?.toFixed(2)} events/sec
+• **Onset Rate**: ${analysis.onsetRate?.toFixed(2)} events/sec${analysis.chords && analysis.chords.length > 0 ? `
+• **Chord Progression**: ${analysis.chords.map(c => c.chord).join(' → ')}
+• **Chord Changes**: ${analysis.chords.length} changes detected` : ''}
 
 Creative analysis unavailable - using technical data only.`,
         };

@@ -7,6 +7,51 @@ import * as fs from 'fs/promises';
 import audioDecode from 'audio-decode';
 
 /**
+ * Smooth chord progression to avoid rapid transitions
+ */
+function smoothChordProgression(chords) {
+  if (chords.length <= 2) return chords;
+  
+  const smoothed = [];
+  let currentChord = chords[0];
+  let chordStart = currentChord.timestamp;
+  let confidenceSum = currentChord.confidence;
+  let count = 1;
+  
+  for (let i = 1; i < chords.length; i++) {
+    if (chords[i].chord === currentChord.chord) {
+      confidenceSum += chords[i].confidence;
+      count++;
+    } else {
+      // Only keep chord if it appears at least 3 times or is at the beginning
+      if (count >= 3 || smoothed.length === 0) {
+        smoothed.push({
+          chord: currentChord.chord,
+          confidence: confidenceSum / count,
+          timestamp: chordStart
+        });
+      }
+      
+      currentChord = chords[i];
+      chordStart = currentChord.timestamp;
+      confidenceSum = currentChord.confidence;
+      count = 1;
+    }
+  }
+  
+  // Add the last chord if it's significant
+  if (count >= 3) {
+    smoothed.push({
+      chord: currentChord.chord,
+      confidence: confidenceSum / count,
+      timestamp: chordStart
+    });
+  }
+  
+  return smoothed;
+}
+
+/**
  * Decode audio file to mono Float32Array
  */
 export async function decodeAudioFile(filePath) {
@@ -154,6 +199,107 @@ export async function analyzeAudioWithEssentia(essentia, audioSignal, sampleRate
     const hpcpResult = essentia.HPCP(spectralPeaks.frequencies, spectralPeaks.magnitudes);
     result.hpcp = essentia.vectorToArray(hpcpResult.hpcp);
     
+    // ========== CHORD DETECTION ==========
+    try {
+      // Frame-by-frame chord detection
+      const frameSize = 4096;
+      const hopSize = 2048;
+      const frames = essentia.FrameGenerator(vectorSignal, frameSize, hopSize);
+      const chords = [];
+      const timeStep = hopSize / sampleRate;
+      
+      for (let i = 0; i < frames.size(); i++) {
+        const frame = frames.get(i);
+        
+        try {
+          const windowed = essentia.Windowing(frame, {
+            type: 'blackmanharris62',
+            size: frameSize,
+            zeroPadding: 0,
+            normalized: true
+          });
+          
+          const frameSpectrum = essentia.Spectrum(windowed.frame, {
+            size: frameSize
+          });
+          
+          const framePeaks = essentia.SpectralPeaks(frameSpectrum.spectrum, {
+            sampleRate: sampleRate,
+            maxPeaks: 100,
+            threshold: 0.00001,
+            minFrequency: 40,
+            maxFrequency: 5000,
+            orderBy: 'magnitude'
+          });
+          
+          const whitened = essentia.SpectralWhitening(
+            frameSpectrum.spectrum,
+            framePeaks.frequencies,
+            framePeaks.magnitudes,
+            {
+              sampleRate: sampleRate,
+              maxFrequency: 5000
+            }
+          );
+          
+          const frameHpcp = essentia.HPCP(
+            whitened.magnitudes,
+            whitened.frequencies,
+            {
+              size: 12,
+              referenceFrequency: 440,
+              harmonics: 4,
+              bandPreset: false,
+              minFrequency: 40,
+              maxFrequency: 5000,
+              splitFrequency: 500,
+              weightType: 'squaredCosine',
+              nonLinear: false,
+              normalized: 'unitSum',
+              windowSize: 1.0
+            }
+          );
+          
+          const chordDetection = essentia.ChordsDetection(frameHpcp.hpcp, {
+            hopSize: hopSize,
+            sampleRate: sampleRate,
+            windowSize: 2.0
+          });
+          
+          if (chordDetection.chords && chordDetection.chords !== 'N') {
+            chords.push({
+              chord: chordDetection.chords,
+              confidence: chordDetection.strength || 0,
+              timestamp: i * timeStep
+            });
+          }
+          
+          // Clean up frame resources
+          frame.delete();
+          windowed.frame.delete();
+          frameSpectrum.spectrum.delete();
+          framePeaks.frequencies.delete();
+          framePeaks.magnitudes.delete();
+          whitened.magnitudes.delete();
+          whitened.frequencies.delete();
+          frameHpcp.hpcp.delete();
+        } catch (frameError) {
+          console.warn(`Frame ${i} chord detection failed:`, frameError);
+          frame.delete();
+        }
+      }
+      
+      frames.delete();
+      
+      // Smooth chord progression
+      result.chords = smoothChordProgression(chords);
+      console.log(`Detected ${result.chords.length} unique chord changes`);
+      
+    } catch (chordError) {
+      console.warn('Chord detection failed:', chordError);
+      result.chords = [];
+    }
+    
     // ========== HIGH-LEVEL FEATURES ==========
     const danceabilityResult = essentia.Danceability(vectorSignal);
     result.danceability = danceabilityResult.danceability;
@@ -210,6 +356,8 @@ export function formatEssentiaResults(analysis) {
     '',
     '🎼 HARMONIC',
     `  HPCP/Chroma: [${analysis.hpcp.map(v => v.toFixed(2)).join(', ')}]`,
+    analysis.chords && analysis.chords.length > 0 ? `  Chord Progression: ${analysis.chords.map(c => c.chord).join(' → ')}` : '',
+    analysis.chords && analysis.chords.length > 0 ? `  Chord Changes: ${analysis.chords.length}` : '',
     '',
     '💃 PRODUCTION',
     `  Danceability: ${(analysis.danceability * 100).toFixed(1)}%`,

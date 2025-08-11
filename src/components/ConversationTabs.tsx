@@ -14,7 +14,7 @@ export function ConversationTabs() {
     closeTab,
     reorderTabs,
   } = useStore();
-  
+
   const [draggedTabId, setDraggedTabId] = useState<string | null>(null);
 
   const handleCloseTab = (e: React.MouseEvent, conversationId: string) => {
@@ -24,7 +24,7 @@ export function ConversationTabs() {
     }
     closeTab(conversationId);
   };
-  
+
   const handleReorder = (newOrder: string[]) => {
     reorderTabs(newOrder);
   };
@@ -32,40 +32,36 @@ export function ConversationTabs() {
   const openTabs = openTabIds
     .map((id) => conversations.find((c) => c.id === id))
     .filter(Boolean);
-  
-  console.log('RENDER - Current conversation ID:', currentConversation?.id);
-  console.log('RENDER - Open tab IDs:', openTabIds);
-  console.log('RENDER - Open tabs:', openTabs.map(t => t?.id));
 
   return (
-    <Tabs.Root 
-      value={currentConversation?.id || ""} 
+    <Tabs.Root
+      value={currentConversation?.id || ""}
       onValueChange={(value) => {
-        console.log('TAB CLICKED:', value);
+        console.log("TAB CLICKED:", value);
         if (value) loadConversation(value);
       }}
       className="flex items-center gap-1 px-3 pt-2 bg-[var(--color-void)] border-b border-[var(--color-text-dim)] overflow-x-auto"
     >
       <Tabs.List className="flex items-center gap-1">
-        <Reorder.Group 
-          axis="x" 
-          values={openTabIds} 
+        <Reorder.Group
+          axis="x"
+          values={openTabIds}
           onReorder={handleReorder}
           className="flex items-center gap-1"
         >
-        {openTabs.map((conv) => {
-          if (!conv) return null;
-          const isActive = currentConversation?.id === conv.id;
-          return (
-            <Reorder.Item
-              key={conv.id}
-              value={conv.id}
-              whileDrag={{ scale: 1.05, zIndex: 1 }}
-              className="relative"
-            >
-              <Tabs.Trigger
+          {openTabs.map((conv) => {
+            if (!conv) return null;
+            const isActive = currentConversation?.id === conv.id;
+            return (
+              <Reorder.Item
+                key={conv.id}
                 value={conv.id}
-                className={`
+                whileDrag={{ scale: 1.05, zIndex: 1 }}
+                className="relative"
+              >
+                <Tabs.Trigger
+                  value={conv.id}
+                  className={`
                   relative group flex items-center gap-2 px-3 py-1.5 rounded-t transition-all cursor-move
                   ${
                     isActive
@@ -74,34 +70,34 @@ export function ConversationTabs() {
                   }
                   max-w-[200px] min-w-[120px] data-[state=active]:bg-[var(--color-surface)]
                 `}
-              >
-                <MessageSquare className="w-3 h-3 flex-shrink-0" />
-                <span className="text-xs font-mono truncate flex-1 text-left">
-                  {conv.title}
-                </span>
-                <div
-                  onClick={(e) => handleCloseTab(e, conv.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400 ml-1 flex-shrink-0 cursor-pointer"
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      handleCloseTab(e as any, conv.id);
-                    }
-                  }}
                 >
-                  <X className="w-3 h-3" />
-                </div>
-              </Tabs.Trigger>
-            </Reorder.Item>
-          );
-        })}
+                  <MessageSquare className="w-3 h-3 flex-shrink-0" />
+                  <span className="text-xs font-mono truncate flex-1 text-left">
+                    {conv.title}
+                  </span>
+                  <div
+                    onClick={(e) => handleCloseTab(e, conv.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400 ml-1 flex-shrink-0 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        handleCloseTab(e as any, conv.id);
+                      }
+                    }}
+                  >
+                    <X className="w-3 h-3" />
+                  </div>
+                </Tabs.Trigger>
+              </Reorder.Item>
+            );
+          })}
         </Reorder.Group>
       </Tabs.List>
 
       <button
         onClick={() => {
-          console.log('NEW TAB BUTTON CLICKED');
+          console.log("NEW TAB BUTTON CLICKED");
           createNewConversation();
         }}
         className="

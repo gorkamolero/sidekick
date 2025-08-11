@@ -107,7 +107,7 @@ function AppContent() {
     console.log("🎯 handleFileDrop called with file:", file);
     console.log("File name:", file.name);
     console.log("File path:", (file as any).path);
-    
+
     // If the file has a path property (from Tauri drop), we can use it directly
     // Otherwise we'd need to read and save the file
     if ((file as any).path) {
@@ -119,9 +119,7 @@ function AppContent() {
       // Normal file object - would need to save it
       setAttachedFile(file);
     }
-    
-    console.log("✅ Called setAttachedFile");
-    
+
     // Switch to chat view if we're in history view
     if (activeView === "history") {
       console.log("Switching to chat view");
@@ -133,56 +131,55 @@ function AppContent() {
     <QueryClientProvider client={queryClient}>
       <TauriDropzone onFileDrop={handleFileDrop}>
         <div className="h-screen flex flex-col bg-[var(--color-void)] relative overflow-hidden">
-        
-        {/* Show pony animations only when MLP theme is active */}
-        {theme === "pony" && <PonyAnimations />}
+          {/* Show pony animations only when MLP theme is active */}
+          {theme === "pony" && <PonyAnimations />}
 
-        {/* Scanner effect */}
-        <div className="scanner" />
+          {/* Scanner effect */}
+          <div className="scanner" />
 
-        {/* Grid pattern background */}
-        <div className="absolute inset-0 grid-pattern opacity-50" />
+          {/* Grid pattern background */}
+          <div className="absolute inset-0 grid-pattern opacity-50" />
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-col h-full">
-          {/* Simplified header */}
-          <header className="px-4 py-1 flex items-center justify-between">
-            <h1 className="text-sm font-bold duochrome tracking-wider">
-              SIDEKICK
-            </h1>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" />
-              <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest">
-                Neural Audio Synthesis
-              </p>
+          {/* Content */}
+          <div className="relative z-10 flex flex-col h-full">
+            {/* Simplified header */}
+            <header className="px-4 py-1 flex items-center justify-between">
+              <h1 className="text-sm font-bold duochrome tracking-wider">
+                SIDEKICK
+              </h1>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" />
+                <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest">
+                  Neural Audio Synthesis
+                </p>
+              </div>
+            </header>
+
+            {/* Project bar */}
+            <ProjectBar />
+
+            {/* Conversation tabs */}
+            <ConversationTabs />
+
+            {/* Main content area */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {activeView === "chat" ? (
+                <>
+                  {/* Chat messages */}
+                  <ChatInterface {...agentState} />
+
+                  {/* Generation panel at bottom */}
+                  <GenerationPanel {...agentState} />
+                </>
+              ) : (
+                /* History view */
+                <HistoryPanel />
+              )}
             </div>
-          </header>
 
-          {/* Project bar */}
-          <ProjectBar />
-
-          {/* Conversation tabs */}
-          <ConversationTabs />
-
-          {/* Main content area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {activeView === "chat" ? (
-              <>
-                {/* Chat messages */}
-                <ChatInterface {...agentState} />
-
-                {/* Generation panel at bottom */}
-                <GenerationPanel {...agentState} />
-              </>
-            ) : (
-              /* History view */
-              <HistoryPanel />
-            )}
+            <StatusBar />
           </div>
-
-          <StatusBar />
         </div>
-      </div>
       </TauriDropzone>
     </QueryClientProvider>
   );

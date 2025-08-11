@@ -26,8 +26,9 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: Ge
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = async () => {
-    const message = prompt.trim();
-    if (!message || isProcessing) return;
+    let message = prompt.trim();
+    if (!message && !attachedFile) return;
+    if (isProcessing) return;
 
     setPrompt("");
 
@@ -35,6 +36,7 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: Ge
     let attachments: any[] | undefined;
     if (attachedFile) {
       const filePath = (attachedFile as any).path || savedFilePath;
+      console.log('🎵 File path being sent:', filePath);
       if (filePath) {
         // Create an attachment object with the file info
         attachments = [{
@@ -42,6 +44,12 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: Ge
           url: filePath, // Use the file path as URL
           contentType: attachedFile.type || 'audio/*',
         }];
+        console.log('🎵 Attachments array:', attachments);
+        
+        // If no message provided, just set a default
+        if (!message) {
+          message = "Analyze this audio";
+        }
       }
       
       // Clear file immediately after capturing it

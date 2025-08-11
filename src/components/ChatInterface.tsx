@@ -126,17 +126,25 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                     )}
                     
                     {/* Show attached files for user messages */}
-                    {message.role === "user" && message.experimental_attachments && message.experimental_attachments.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {message.experimental_attachments.map((attachment: any, i: number) => (
-                          <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-[var(--color-background)] rounded text-[10px] text-[var(--color-text-dim)]">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                            </svg>
-                            <span>{attachment.name || 'audio file'}</span>
+                    {message.role === "user" && (
+                      <>
+                        {/* Check the metadata object for attachments */}
+                        {message.metadata?.attachments && message.metadata.attachments.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {message.metadata.attachments.map((attachment: any, i: number) => (
+                              <div key={i} className="flex items-center gap-1.5 px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-text-secondary)]/20 rounded-md text-xs text-[var(--color-text-secondary)]">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                </svg>
+                                <span className="font-mono">{attachment.name || 'audio file'}</span>
+                                {attachment.contentType && (
+                                  <span className="text-[var(--color-text-dim)] ml-1">({attachment.contentType.split('/')[1]})</span>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        )}
+                      </>
                     )}
                     
                     {/* Show task progress for tool calls */}

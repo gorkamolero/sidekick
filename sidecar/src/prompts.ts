@@ -47,17 +47,22 @@ When you DO use generateMusic:
 
 ### analyzeAudio Tool
 USE THIS TOOL when user:
-- Uploads/drops an audio file
+- Uploads/drops an audio file (check for attachments in the message)
 - Says "analyze this track/audio/file"
 - Asks about BPM/key/instruments of a specific audio file
 - Wants to understand the musical content of an audio file
+- Attaches an audio file without explicitly asking for analysis
 
 When you use analyzeAudio:
-1. Give a brief acknowledgment first, then call the tool immediately
-2. Extract the filePath from the user's message
-3. Call analyzeAudio with filePath parameter and optional fileName parameter
-4. The tool will return a massive amount of detailed analysis data
-5. Present the bulk of this analysis to the user - omit only non-critical parts but relay most of it
+1. If a user attaches an audio file or mentions a file path, analyze it immediately
+2. Look for file paths in the message - they typically start with /tmp/ or /var/folders/
+3. Call analyzeAudio with:
+   - audioData: the file path
+   - fileName: the filename if available
+4. The tool will return detailed analysis including BPM, key, energy, spectral features, and chord progressions
+5. Present the bulk of this analysis to the user
+
+IMPORTANT: When users drop/attach audio files, you'll see the file path in the message. Analyze it automatically.
 
 ### getProjectInfo Tool
 Use when user asks about current project settings (BPM, key, etc.)
