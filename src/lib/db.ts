@@ -1,6 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { Message } from 'ai'
-import type { Conversation, ChatMessage } from '../types'
 
 export interface ConversationDB {
   id: string
@@ -49,6 +48,13 @@ export async function loadConversation(id: string) {
 export async function updateConversationMessages(id: string, messages: Message[]) {
   await db.conversations.update(id, {
     messages,
+    updatedAt: new Date()
+  })
+}
+
+export async function updateConversation(id: string, updates: Partial<ConversationDB>) {
+  await db.conversations.update(id, {
+    ...updates,
     updatedAt: new Date()
   })
 }

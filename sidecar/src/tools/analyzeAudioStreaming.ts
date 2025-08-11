@@ -35,7 +35,7 @@ export const analyzeAudioStreaming = createTool({
         inputData: { filePath, fileName }
       });
       
-      let finalResult = null;
+      const finalResult = null;
       
       // Process stream chunks
       for await (const chunk of stream) {

@@ -15,10 +15,10 @@ export interface ChordProgression {
 
 export class ChordDetectionService {
   private essentia: any;
-  private isInitialized: boolean = false;
-  private frameSize: number = 4096;
-  private hopSize: number = 2048;
-  private sampleRate: number = 44100;
+  private isInitialized = false;
+  private frameSize = 4096;
+  private hopSize = 2048;
+  private sampleRate = 44100;
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
@@ -178,7 +178,7 @@ export class ChordDetectionService {
         this.hopSize * 4
       );
 
-      let hpcpSum = new Array(12).fill(0);
+      const hpcpSum = new Array(12).fill(0);
       let frameCount = 0;
 
       for (let i = 0; i < frames.size(); i++) {

@@ -53,7 +53,7 @@ export interface EssentiaAnalysisResult {
 export async function analyzeAudioWithEssentia(
   essentia: any,
   audioSignal: Float32Array,
-  sampleRate: number = 44100
+  sampleRate = 44100
 ): Promise<EssentiaAnalysisResult> {
   
   // Convert to Essentia vector

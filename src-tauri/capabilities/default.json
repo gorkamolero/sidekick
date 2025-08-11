@@ -9,6 +9,7 @@
     "core:default",
     "fs:default",
     "dialog:default",
-    "shell:default"
+    "shell:default",
+    "drag:allow-start-drag"
   ]
 }

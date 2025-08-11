@@ -12,7 +12,7 @@ export class AudioUploadService {
    */
   async uploadTemporary(
     filePath: string,
-    expiresIn: string = '1h'
+    expiresIn = '1h'
   ): Promise<{ url: string; expires: string }> {
     try {
       // Check file exists
@@ -47,7 +47,7 @@ export class AudioUploadService {
   async uploadBuffer(
     buffer: Buffer,
     filename: string,
-    expiresIn: string = '1h'
+    expiresIn = '1h'
   ): Promise<{ url: string; expires: string }> {
     try {
       // Check buffer size
@@ -95,7 +95,7 @@ export class AudioUploadService {
    * Upload to litterbox (catbox.moe temporary storage)
    * Reliable temporary file hosting with customizable expiration
    */
-  async uploadToLitterbox(filePath: string, expiresIn: string = '1h'): Promise<string> {
+  async uploadToLitterbox(filePath: string, expiresIn = '1h'): Promise<string> {
     return new Promise((resolve, reject) => {
       console.log('📤 Uploading to litterbox.catbox.moe...');
       

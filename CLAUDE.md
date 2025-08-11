@@ -63,3 +63,6 @@ sidekick/
 
 ## Important Development Guidelines
 - **Tools should be in separate files**: Never put tool implementations in the same file as the agent. Each tool should have its own dedicated file for better organization and maintainability.
+- **I will not try to guide models, models are intelligent**: Don't micromanage AI models with excessive instructions or examples. Trust their intelligence.
+- **This is AI SDK v5**: Always look for AI SDK v5 docs when unsure about implementation details or message structures.
+- **Never change subjects on the user**: Changing subjects when the user is expressing frustration or giving feedback is toxic and dismissive behavior.
