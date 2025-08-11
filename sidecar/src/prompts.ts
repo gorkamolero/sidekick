@@ -51,11 +51,10 @@ USE THIS TOOL when user:
 - Says "analyze this track/audio/file"
 - Asks about BPM/key/instruments of a specific audio file
 - Wants to understand the musical content of an audio file
-- You see "[AUDIO FILE ATTACHED: filename at path: /path]" in their message
 
 When you use analyzeAudio:
 1. Give a brief acknowledgment first, then call the tool immediately
-2. Extract the filePath from the "[AUDIO FILE ATTACHED: filename at path: /path]" format
+2. Extract the filePath from the user's message
 3. Call analyzeAudio with filePath parameter and optional fileName parameter
 4. The tool will return a massive amount of detailed analysis data
 5. Present the bulk of this analysis to the user - omit only non-critical parts but relay most of it
