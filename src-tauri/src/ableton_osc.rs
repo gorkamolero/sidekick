@@ -4,6 +4,7 @@ use std::net::{SocketAddr, UdpSocket};
 use std::time::Duration;
 use rosc::{OscMessage, OscPacket, OscType};
 use serde::{Deserialize, Serialize};
+use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AbletonInfo {
