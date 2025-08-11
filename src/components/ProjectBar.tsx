@@ -4,6 +4,12 @@ import { MusicServiceSelector } from "./MusicServiceSelector";
 import { ThemeSelector } from "./ThemeSelector";
 import { Archive, RefreshCw, Zap } from "lucide-react";
 import { useAbleton } from "../hooks/useAbleton";
+import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function ProjectBar() {
   const {
@@ -15,6 +21,19 @@ export function ProjectBar() {
   } = useStore();
   
   const { isConnected, isSyncing, syncWithAbleton } = useAbleton();
+
+  const handleSync = async () => {
+    const success = await syncWithAbleton();
+    if (success) {
+      toast.success("Synced with Ableton Live", {
+        description: `BPM: ${project.bpm}, Time Signature: ${project.timeSignature}`,
+      });
+    } else {
+      toast.error("Failed to sync", {
+        description: "Could not connect to Ableton Live",
+      });
+    }
+  };
 
   // Initialize with defaults if no project
   const project = currentProject || {
@@ -140,27 +159,37 @@ export function ProjectBar() {
 
       {/* Controls on the right - compact box */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <button
-          onClick={syncWithAbleton}
-          disabled={!isConnected || isSyncing}
-          className={`flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ${
-            isConnected
-              ? isSyncing
-                ? "bg-[var(--color-accent)]/50 text-[var(--color-accent)] cursor-wait"
-                : "bg-[var(--color-surface)] hover:bg-[var(--color-accent)] hover:text-black text-[var(--color-accent)]"
-              : "bg-[var(--color-surface)] text-[var(--color-text-dim)] cursor-not-allowed opacity-50"
-          }`}
-          title={isConnected ? "Sync with Ableton Live" : "Not connected to Ableton"}
-        >
-          {isSyncing ? (
-            <RefreshCw className="w-3 h-3 animate-spin" />
-          ) : (
-            <Zap className="w-3 h-3" />
-          )}
-          <span className="text-[10px] font-medium">
-            {isConnected ? "SYNC" : "OFFLINE"}
-          </span>
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleSync}
+              disabled={!isConnected || isSyncing}
+              className={`flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ${
+                isConnected
+                  ? isSyncing
+                    ? "bg-[var(--color-accent)]/50 text-[var(--color-accent)] cursor-wait"
+                    : "bg-[var(--color-surface)] hover:bg-[var(--color-accent)] hover:text-black text-[var(--color-accent)]"
+                  : "bg-[var(--color-surface)] text-[var(--color-text-dim)] cursor-not-allowed opacity-50"
+              }`}
+            >
+              {isSyncing ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                <Zap className="w-3 h-3" />
+              )}
+              <span className="text-[10px] font-medium">
+                {isConnected ? "SYNC" : "OFFLINE"}
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent className="bg-[var(--color-surface)] border-[var(--color-text-dim)] text-[var(--color-text-primary)]">
+            <p className="text-xs">
+              {isConnected
+                ? "Sync project settings with Ableton Live (auto-syncs every 5s)"
+                : "Ableton Live is not detected. Make sure it's running."}
+            </p>
+          </TooltipContent>
+        </Tooltip>
         <MusicServiceSelector />
         <ThemeSelector />
         <button

@@ -16,6 +16,7 @@ import { Task, TaskContent, TaskItem, TaskTrigger } from "@/components/ai-elemen
 import { Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToolCallDisplay } from "./ToolCallDisplay";
+import { TaskProgressDisplay } from "./TaskProgressDisplay";
 import type { UIMessage } from "@ai-sdk/react";
 
 interface ChatInterfaceProps {
@@ -95,33 +96,49 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                       </div>
                     )}
                     
-                    {/* Show reasoning - check multiple possible locations */}
-                    {(message.reasoning || 
-                      message.experimental_reasoning ||
-                      (message.parts && message.parts.some((p: any) => p.type === "reasoning" || p.type === "thinking"))) && (
-                      <Reasoning className="mb-2" isStreaming={showLoader}>
-                        <ReasoningTrigger />
-                        <ReasoningContent>
-                          {message.reasoning || 
-                           message.experimental_reasoning ||
-                           message.parts?.filter((p: any) => p.type === "reasoning" || p.type === "thinking")
-                             .map((p: any) => p.reasoning || p.thinking || p.text || p.content)
-                             .join("\n")}
-                        </ReasoningContent>
-                      </Reasoning>
-                    )}
+                    {/* Show reasoning - check multiple possible locations including Kimi's format */}
+                    {(() => {
+                      // Check if content has thinking tags (Kimi format)
+                      const contentText = message.content || (message.parts?.find((p: any) => p.type === "text")?.text);
+                      const thinkingMatch = contentText?.match(/<thinking>([\s\S]*?)<\/thinking>/);
+                      
+                      const hasReasoning = message.reasoning || 
+                                         message.experimental_reasoning ||
+                                         thinkingMatch ||
+                                         (message.parts && message.parts.some((p: any) => p.type === "reasoning" || p.type === "thinking"));
+                      
+                      if (!hasReasoning) return null;
+                      
+                      const reasoningContent = message.reasoning || 
+                                             message.experimental_reasoning ||
+                                             thinkingMatch?.[1] ||
+                                             message.parts?.filter((p: any) => p.type === "reasoning" || p.type === "thinking")
+                                               .map((p: any) => p.reasoning || p.thinking || p.text || p.content)
+                                               .join("\n");
+                      
+                      return (
+                        <Reasoning className="mb-2" isStreaming={showLoader}>
+                          <ReasoningTrigger />
+                          <ReasoningContent>
+                            {reasoningContent}
+                          </ReasoningContent>
+                        </Reasoning>
+                      );
+                    })()}
                     
-                    {/* Always show content if available */}
+                    {/* Always show content if available (filter out thinking tags) */}
                     {message.parts && message.parts.length > 0 && (
                       <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
-                        {message.parts.filter((p: any) => p.type === "text" && p.text).map((p: any) => p.text).join("\n")}
+                        {message.parts.filter((p: any) => p.type === "text" && p.text)
+                          .map((p: any) => p.text.replace(/<thinking>[\s\S]*?<\/thinking>/g, '').trim())
+                          .join("\n")}
                       </Response>
                     )}
                     
-                    {/* Show content for messages without parts (fallback) */}
+                    {/* Show content for messages without parts (fallback, filter out thinking tags) */}
                     {!message.parts && message.content && (
                       <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
-                        {message.content}
+                        {message.content.replace(/<thinking>[\s\S]*?<\/thinking>/g, '').trim()}
                       </Response>
                     )}
                     
@@ -171,6 +188,11 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                             ))}
                         </TaskContent>
                       </Task>
+                    )}
+
+                    {/* Show task progress updates */}
+                    {message.role === "assistant" && message.parts && (
+                      <TaskProgressDisplay message={message} />
                     )}
 
                     {/* Always show tool calls if available */}

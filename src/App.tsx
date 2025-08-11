@@ -18,6 +18,7 @@ import { StatusBar } from "./components/StatusBar";
 import { ProjectBar } from "./components/ProjectBar";
 import { TauriDropzone } from "./components/TauriDropzone";
 import tauriAPI from "./lib/tauri-api";
+import { Toaster } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient();
 
@@ -214,6 +215,16 @@ function AppContent() {
             <StatusBar />
           </div>
         </div>
+        <Toaster 
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-text-dim)',
+              color: 'var(--color-text-primary)',
+            },
+          }}
+        />
       </TauriDropzone>
     </QueryClientProvider>
   );
