@@ -1,6 +1,7 @@
 use std::fs;
 use tauri::{Manager, Emitter};
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_positioner::{WindowExt, Position};
 use serde_json::Value;
 
 mod ableton_osc;
@@ -114,6 +115,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_drag::init())
+    .plugin(tauri_plugin_positioner::init())
     .invoke_handler(tauri::generate_handler![
         save_audio_file,
         get_project_info,
@@ -160,9 +162,8 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         // Set window to full height but keep width at 400px
         window.set_size(tauri::LogicalSize::new(400.0, screen_height as f64)).unwrap();
         
-        // Position it at the right edge of the screen (optional)
-        // let screen_width = screen_size.width;
-        // window.set_position(tauri::LogicalPosition::new((screen_width - 400) as f64, 0.0)).unwrap();
+        // Position it at the right edge using the positioner plugin
+        let _ = window.move_window(Position::RightCenter);
       }
       
       
