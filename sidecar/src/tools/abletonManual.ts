@@ -1,7 +1,11 @@
 import { createTool } from '@mastra/core';
 import { z } from 'zod';
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Helper function to read the local manual file
 async function readManualContent(): Promise<string> {

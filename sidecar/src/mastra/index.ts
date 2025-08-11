@@ -3,6 +3,7 @@ import { ConsoleLogger } from "@mastra/core/logger";
 import { registerApiRoute } from "@mastra/core/server";
 import * as dotenv from "dotenv";
 import { handleChatRequest } from "../chat-handler";
+import { agent } from "../agent";
 
 // Load environment variables
 dotenv.config({ path: "../.env", debug: false });
