@@ -11,8 +11,8 @@ export function useAbleton() {
   const { currentProject, updateProject } = useStore();
   const abletonOSC = AbletonOSC.getInstance();
   
-  const syncWithAbleton = useCallback(async () => {
-    setIsSyncing(true);
+  const syncWithAbleton = useCallback(async (isManual = false) => {
+    if (isManual) setIsSyncing(true);
     try {
       const info = await abletonOSC.getInfo();
       if (info && currentProject) {
@@ -33,10 +33,16 @@ export function useAbleton() {
           if (bpmChanged) changes.push(`BPM: ${currentProject.bpm} → ${newBpm}`);
           if (sigChanged) changes.push(`Time Signature: ${currentProject.timeSignature} → ${timeSignature}`);
           
-          toast.success("Synced with Ableton Live", {
-            description: changes.join(', '),
-          });
-        } else {
+          if (isManual) {
+            toast.success("Synced with Ableton Live", {
+              description: changes.join(', '),
+            });
+          } else {
+            toast.info("Ableton sync detected changes", {
+              description: changes.join(', '),
+            });
+          }
+        } else if (isManual) {
           toast.info("Already in sync", {
             description: `BPM: ${newBpm}, Time Signature: ${timeSignature}`,
           });
@@ -48,7 +54,7 @@ export function useAbleton() {
       console.error('Failed to sync with Ableton:', error);
       return false;
     } finally {
-      setIsSyncing(false);
+      if (isManual) setIsSyncing(false);
     }
   }, [abletonOSC, updateProject, currentProject]);
   
@@ -65,33 +71,7 @@ export function useAbleton() {
         
         // Auto-sync if connected
         if (connected && currentProject) {
-          const info = await abletonOSC.getInfo();
-          if (info) {
-            const timeSignature = `${info.signature_numerator}/${info.signature_denominator}`;
-            const newBpm = Math.round(info.tempo);
-            
-            // Check what changed
-            const bpmChanged = newBpm !== currentProject.bpm;
-            const sigChanged = timeSignature !== currentProject.timeSignature;
-            
-            // Only update if values changed
-            if (bpmChanged || sigChanged) {
-              updateProject({
-                bpm: newBpm,
-                timeSignature: timeSignature,
-              });
-              setLastSyncTime(new Date());
-              
-              // Show toast with what changed
-              const changes = [];
-              if (bpmChanged) changes.push(`BPM: ${currentProject.bpm} → ${newBpm}`);
-              if (sigChanged) changes.push(`Time Signature: ${currentProject.timeSignature} → ${timeSignature}`);
-              
-              toast.info("Ableton sync detected changes", {
-                description: changes.join(', '),
-              });
-            }
-          }
+          await syncWithAbleton(false); // false = auto-sync
         }
       } catch (error) {
         console.error('Auto-sync failed:', error);
@@ -109,7 +89,7 @@ export function useAbleton() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [abletonOSC, currentProject, updateProject]);
+  }, [abletonOSC, syncWithAbleton]);
   
   return {
     isConnected,
