@@ -96,7 +96,7 @@ export type ToolInputProps = ComponentProps<'div'> & {
 };
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
-  <Collapsible defaultOpen={true}>
+  <Collapsible defaultOpen={false}>
     <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-4 py-2 hover:bg-[var(--color-surface)]/50 transition-colors">
       <h4 className="font-medium text-[var(--color-text-dim)] text-xs uppercase tracking-wide">
         Parameters

@@ -153,7 +153,7 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                                          part.state === 'input-available' ? 'in-progress' : 'pending';
                             
                             return (
-                              <Task key={`task-${i}`} className="mb-2" defaultOpen={true}>
+                              <Task key={`task-${i}`} className="mb-2" defaultOpen={status === 'completed'}>
                                 <TaskTrigger 
                                   title={title}
                                   status={status}

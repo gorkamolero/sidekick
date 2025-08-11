@@ -186,7 +186,7 @@ export function ToolCallDisplay({
         };
 
         return (
-          <Tool key={`${toolPart.type}-${index}`} defaultOpen={true}>
+          <Tool key={`${toolPart.type}-${index}`} defaultOpen={toolPart.state === 'output-available'}>
             <ToolHeader 
               type={getToolDisplayName()} 
               state={toolPart.state}
