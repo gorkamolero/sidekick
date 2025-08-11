@@ -10,22 +10,24 @@ import {
 
 interface SunoGenerationRequest {
   prompt: string;
-  model: 'v3.5' | 'v4' | 'v4.5';
-  duration?: number;
+  model: 'V3_5' | 'V4' | 'V4_5';
+  customMode: boolean;
+  instrumental: boolean;
   lyrics?: string;
-  make_instrumental?: boolean;
-  extend_audio?: string;
-  temperature?: number;
+  callBackUrl?: string;
 }
 
 interface SunoGenerationResponse {
-  task_id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  audio_url?: string;
-  duration?: number;
-  lyrics?: string;
-  credits_used?: number;
-  error?: string;
+  code: number;
+  msg: string;
+  data?: {
+    taskId?: string;
+    status?: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+    audioUrl?: string;
+    duration?: number;
+    lyrics?: string;
+    creditsUsed?: number;
+  };
 }
 
 export class SunoAdapter implements MusicGenerationService {
@@ -36,7 +38,7 @@ export class SunoAdapter implements MusicGenerationService {
   constructor(config: SunoConfig) {
     this.config = config;
     this.axiosInstance = axios.create({
-      baseURL: config.baseUrl,
+      baseURL: config.baseUrl || 'https://api.sunoapi.org',
       headers: {
         'Authorization': `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json'
@@ -53,12 +55,10 @@ export class SunoAdapter implements MusicGenerationService {
     
     const request: SunoGenerationRequest = {
       prompt: enhancedPrompt,
-      model: model as 'v3.5' | 'v4' | 'v4.5',
-      duration,
-      lyrics: params.lyrics,
-      make_instrumental: params.makeInstrumental,
-      extend_audio: params.extendAudio,
-      temperature: params.temperature
+      model: this.mapModelVersion(model),
+      customMode: !!params.lyrics,
+      instrumental: params.makeInstrumental || false,
+      lyrics: params.lyrics
     };
 
     try {
@@ -66,13 +66,13 @@ export class SunoAdapter implements MusicGenerationService {
       
       const result = await this.pollForCompletion(taskId);
       
-      if (!result.audio_url) {
+      if (!result.data?.audioUrl) {
         throw new Error('No audio URL received from Suno');
       }
 
       return {
-        audioUrl: result.audio_url,
-        duration: result.duration || duration,
+        audioUrl: result.data.audioUrl,
+        duration: result.data.duration || duration,
         format: 'mp3',
         metadata: {
           service: this.name,
@@ -97,7 +97,7 @@ export class SunoAdapter implements MusicGenerationService {
       hasLyricsSupport: true,
       hasExtensionSupport: true,
       hasStemSeparation: true,
-      models: ['v3.5', 'v4', 'v4.5']
+      models: ['V3_5', 'V4', 'V4_5']
     };
   }
 
@@ -127,7 +127,7 @@ export class SunoAdapter implements MusicGenerationService {
       }
     }
 
-    if (params.model && !['v3.5', 'v4', 'v4.5'].includes(params.model)) {
+    if (params.model && !['V3_5', 'V4', 'V4_5'].includes(params.model)) {
       errors.push(`Unsupported model: ${params.model}`);
     }
 
@@ -148,7 +148,7 @@ export class SunoAdapter implements MusicGenerationService {
     }
 
     try {
-      const response = await this.axiosInstance.get('/health', {
+      const response = await this.axiosInstance.get('/api/v1/health', {
         timeout: 5000
       });
       return response.status === 200;
@@ -160,20 +160,24 @@ export class SunoAdapter implements MusicGenerationService {
 
   private async initiateGeneration(request: SunoGenerationRequest): Promise<string> {
     try {
-      const response = await this.axiosInstance.post('/api/generate', request);
+      const response = await this.axiosInstance.post('/api/v1/generate', request);
       
-      if (!response.data.task_id) {
+      if (response.data.code !== 200) {
+        throw new Error(response.data.msg || 'Generation request failed');
+      }
+      
+      if (!response.data.data?.taskId) {
         throw new Error('No task ID received from Suno API');
       }
       
-      return response.data.task_id;
+      return response.data.data.taskId;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 402) {
-          throw new Error('Insufficient credits for Suno generation');
+        if (error.response?.status === 401) {
+          throw new Error('Authentication failed: Invalid API key');
         }
         if (error.response?.status === 429) {
-          throw new Error('Rate limit exceeded for Suno API');
+          throw new Error('Insufficient credits for Suno generation');
         }
       }
       throw error;
@@ -187,15 +191,19 @@ export class SunoAdapter implements MusicGenerationService {
 
     while (attempts < maxAttempts) {
       try {
-        const response = await this.axiosInstance.get(`/api/task/${taskId}`);
+        const response = await this.axiosInstance.get(`/api/v1/generate/record-info?taskId=${taskId}`);
         const data: SunoGenerationResponse = response.data;
 
-        if (data.status === 'completed') {
+        if (data.code !== 200) {
+          throw new Error(data.msg || 'Failed to get task status');
+        }
+
+        if (data.data?.status === 'SUCCESS') {
           return data;
         }
 
-        if (data.status === 'failed') {
-          throw new Error(data.error || 'Generation failed');
+        if (data.data?.status === 'FAILED') {
+          throw new Error('Generation failed');
         }
 
         if (attempts % 10 === 0 && attempts > 0) {
@@ -231,19 +239,31 @@ export class SunoAdapter implements MusicGenerationService {
   }
 
   private selectModel(params: MusicGenerationParams): string {
-    if (params.model && ['v3.5', 'v4', 'v4.5'].includes(params.model)) {
+    if (params.model && ['V3_5', 'V4', 'V4_5'].includes(params.model)) {
       return params.model;
     }
 
     if (params.mode === 'sample') {
-      return 'v3.5';
+      return 'V3_5';
     }
 
     if (params.mode === 'inspiration') {
-      return 'v4.5';
+      return 'V4_5';
     }
 
-    return this.config.defaultModel || 'v4';
+    return this.config.defaultModel || 'V4';
+  }
+
+  private mapModelVersion(model: string): 'V3_5' | 'V4' | 'V4_5' {
+    const mapping: Record<string, 'V3_5' | 'V4' | 'V4_5'> = {
+      'v3.5': 'V3_5',
+      'V3_5': 'V3_5',
+      'v4': 'V4',
+      'V4': 'V4',
+      'v4.5': 'V4_5',
+      'V4_5': 'V4_5'
+    };
+    return mapping[model] || 'V4';
   }
 
   private enhancePromptForMode(prompt: string, mode?: 'loop' | 'sample' | 'inspiration'): string {
