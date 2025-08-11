@@ -7,7 +7,7 @@ export interface ChatSlice {
   currentConversation: Conversation | null;
   conversations: Conversation[];
   openTabIds: string[];
-  activeView: 'chat' | 'history';
+  activeView: 'chat' | 'history' | 'settings';
   attachedFile: File | null;
   shouldFocusPrompt: boolean;
   
@@ -17,7 +17,7 @@ export interface ChatSlice {
   deleteConversation: (conversationId: string) => void;
   closeTab: (conversationId: string) => void;
   openTab: (conversationId: string) => void;
-  setActiveView: (view: 'chat' | 'history') => void;
+  setActiveView: (view: 'chat' | 'history' | 'settings') => void;
   setAttachedFile: (file: File | null) => void;
   initializeStore: () => void;
   clearFocusPrompt: () => void;

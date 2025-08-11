@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GenerationPanel } from "./components/GenerationPanel";
 import { HistoryPanel } from "./components/HistoryPanel";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { ChatInterface } from "./components/ChatInterface";
+import { FirstTimeSetup } from "./components/FirstTimeSetup";
 import { useAgent } from "./hooks/useAgent";
 import { ConversationTabs } from "./components/ConversationTabs";
 import { MusicServiceSelector } from "./components/MusicServiceSelector";
@@ -20,6 +22,15 @@ import tauriAPI from "./lib/tauri-api";
 const queryClient = new QueryClient();
 
 function AppContent() {
+  const [setupComplete, setSetupComplete] = useState(() => {
+    // Check if setup was completed before
+    const completed = localStorage.getItem('setupComplete') === 'true';
+    // Also check if we're in Tauri mode
+    const inTauri = window.__TAURI__ !== undefined;
+    // Auto-complete if in Tauri and previously completed
+    return completed && inTauri;
+  });
+
   const {
     setProject,
     initializeStore,
@@ -127,6 +138,26 @@ function AppContent() {
     }
   };
 
+  const handleSetupComplete = () => {
+    setSetupComplete(true);
+    localStorage.setItem('setupComplete', 'true');
+    
+    // Mark that env is configured if we have the keys
+    if (window.__TAURI__) {
+      // In a real app, we'd check for actual .env file
+      localStorage.setItem('envConfigured', 'true');
+    }
+  };
+
+  // Show setup screen if not complete
+  if (!setupComplete) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <FirstTimeSetup onComplete={handleSetupComplete} />
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TauriDropzone onFileDrop={handleFileDrop}>
@@ -171,9 +202,12 @@ function AppContent() {
                   {/* Generation panel at bottom */}
                   <GenerationPanel {...agentState} />
                 </>
-              ) : (
+              ) : activeView === "history" ? (
                 /* History view */
                 <HistoryPanel />
+              ) : (
+                /* Settings view */
+                <SettingsPanel />
               )}
             </div>
 

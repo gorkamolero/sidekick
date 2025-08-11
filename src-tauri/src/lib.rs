@@ -3,6 +3,8 @@ use tauri::{Manager, Emitter};
 use tauri_plugin_shell::ShellExt;
 use serde_json::Value;
 
+mod ableton_osc;
+
 #[tauri::command]
 async fn save_audio_file(buffer: Vec<u8>, filename: String) -> Result<String, String> {
     let temp_dir = std::env::temp_dir().join("sidekick-audio");
@@ -118,7 +120,13 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         get_temp_audio_path,
         start_sidecar,
         call_sidecar_agent,
-        create_new_tab
+        create_new_tab,
+        ableton_osc::install_ableton_osc,
+        ableton_osc::check_ableton_osc_installed,
+        ableton_osc::test_ableton_connection,
+        ableton_osc::get_ableton_info,
+        ableton_osc::set_ableton_playing,
+        ableton_osc::set_ableton_tempo
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {

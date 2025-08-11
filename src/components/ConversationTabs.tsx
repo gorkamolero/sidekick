@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { useStore } from "../lib/store";
-import { Plus, X, MessageSquare } from "lucide-react";
+import { Plus, X, MessageSquare, Settings, Archive } from "lucide-react";
 import { Reorder } from "framer-motion";
 
 export function ConversationTabs() {
@@ -13,6 +13,8 @@ export function ConversationTabs() {
     loadConversation,
     closeTab,
     reorderTabs,
+    activeView,
+    setActiveView,
   } = useStore();
 
   const [draggedTabId, setDraggedTabId] = useState<string | null>(null);
@@ -111,6 +113,39 @@ export function ConversationTabs() {
         <Plus className="w-3 h-3" />
         <span className="text-xs font-mono">NEW</span>
       </button>
+
+      {/* View toggle buttons */}
+      <div className="ml-auto flex gap-1">
+        <button
+          onClick={() => setActiveView('history')}
+          className={`
+            flex items-center gap-1 px-3 py-1.5 rounded-t
+            ${activeView === 'history' 
+              ? 'bg-[var(--color-accent)] text-black' 
+              : 'bg-[var(--color-surface)]/50 hover:bg-[var(--color-surface)]/70 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]'}
+            transition-all border-t border-l border-r border-[var(--color-text-dim)]
+            ${activeView === 'history' ? 'border-[var(--color-accent)]' : 'hover:border-[var(--color-accent)]'}
+          `}
+        >
+          <Archive className="w-3 h-3" />
+          <span className="text-xs font-mono">ARCHIVE</span>
+        </button>
+
+        <button
+          onClick={() => setActiveView('settings')}
+          className={`
+            flex items-center gap-1 px-3 py-1.5 rounded-t
+            ${activeView === 'settings' 
+              ? 'bg-[var(--color-accent)] text-black' 
+              : 'bg-[var(--color-surface)]/50 hover:bg-[var(--color-surface)]/70 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]'}
+            transition-all border-t border-l border-r border-[var(--color-text-dim)]
+            ${activeView === 'settings' ? 'border-[var(--color-accent)]' : 'hover:border-[var(--color-accent)]'}
+          `}
+        >
+          <Settings className="w-3 h-3" />
+          <span className="text-xs font-mono">SETTINGS</span>
+        </button>
+      </div>
     </Tabs.Root>
   );
 }
