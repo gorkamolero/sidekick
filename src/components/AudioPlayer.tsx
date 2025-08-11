@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Download, Repeat, GripVertical } from 'lucide-react';
 import { Howl } from 'howler';
-import { domToPng } from 'modern-screenshot';
 import { startDrag } from '@crabnebula/tauri-plugin-drag';
 import { ChordProgression } from './ChordProgression';
 
@@ -138,9 +137,13 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration, showCho
 
   const dragRef = useRef<HTMLDivElement>(null);
   
-  const handleDragStart = async (event: React.DragEvent<HTMLDivElement>) => {
+  const handleMouseDown = async (event: React.MouseEvent<HTMLDivElement>) => {
+    // Don't trigger on button clicks
+    if ((event.target as HTMLElement).tagName === 'BUTTON') {
+      return;
+    }
+    
     if (!localFilePath) {
-      console.warn('No local file path available for drag operation');
       return;
     }
     
@@ -148,25 +151,18 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration, showCho
     setIsDragging(true);
     
     try {
-      console.log('Starting drag with file:', localFilePath);
+      console.log('Starting drag with:', localFilePath);
       
-      // Use Tauri drag plugin to start native drag
       await startDrag({
-        item: [localFilePath],
-        icon: '', // Empty string for no icon
-        mode: 'copy'
-      }, (result) => {
-        console.log('Drag operation result:', result);
-        setIsDragging(false);
+        item: [localFilePath]
       });
+      
+      console.log('Drag completed');
     } catch (err) {
-      console.error('Failed to start drag:', err);
+      console.error('Drag failed:', err);
+    } finally {
       setIsDragging(false);
     }
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
   };
 
   return (
@@ -176,10 +172,8 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration, showCho
         className={`flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-text-secondary)]/30 rounded-md px-2 py-1.5 transition-all hover:border-[var(--color-accent)] cursor-move w-full max-w-full ${
           isDragging ? 'opacity-50 scale-95 border-[var(--color-accent)] animate-pulse' : ''
         } ${localFilePath ? 'hover:shadow-md hover:shadow-[var(--color-accent)]/20' : 'cursor-default opacity-60'}`}
-        draggable={!!localFilePath}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        title={localFilePath ? "Drag to Ableton Live" : "File not available for drag"}
+        onMouseDown={handleMouseDown}
+        title="Click and drag to Ableton Live or Finder"
       >
         <GripVertical size={12} className="text-[var(--color-text-dim)] flex-shrink-0" />
         
