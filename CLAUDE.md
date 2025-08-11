@@ -92,8 +92,10 @@ sidekick/
 5. Test and fix music generation APIs
 
 ## Important Development Guidelines
+- **NEVER BUILD; NEVER DEV**: Do not run npm run build, npm run dev, or any build/dev commands
 - **Tools should be in separate files**: Never put tool implementations in the same file as the agent
 - **I will not try to guide models, models are intelligent**: Trust AI models' intelligence
 - **This is AI SDK v5**: Always refer to v5 docs for implementation
 - **Never change subjects on the user**: Stay focused on user's concerns
 - **The app uses Tauri, not Electron**: Important for native features and APIs
+- **COMMIT FILES ONE-BY-ONE**: Use git add for individual files, not git add -A or git add . Then use git commit with a message

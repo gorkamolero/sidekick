@@ -77,6 +77,17 @@ const generateMusic = createTool({
         localFilePath,
         service: result.metadata.service,
         message: `Generated ${result.duration}s audio using ${result.metadata.service} and saved locally`,
+        // Add task metadata for better UI display
+        taskMetadata: {
+          title: `Music Generation: ${mode || 'loop'}`,
+          description: `Creating ${duration || 8}s ${model ? `with ${model}` : 'audio'}`,
+          steps: [
+            'Initializing music service',
+            'Processing prompt',
+            'Generating audio',
+            'Downloading result'
+          ]
+        }
       };
     } catch (error) {
       console.log('🎵 GENERATION FAILED!');
