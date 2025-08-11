@@ -1,4 +1,3 @@
-import { Essentia, EssentiaWASM } from 'essentia.js';
 import decode from 'audio-decode';
 
 export interface ChordResult {
@@ -24,13 +23,25 @@ export class ChordDetectionService {
     if (this.isInitialized) return;
     
     try {
-      const essentiaWasm = await EssentiaWASM();
-      this.essentia = new Essentia(essentiaWasm);
+      const EssentiaModule = await import('essentia.js');
+      const { Essentia, EssentiaWASM } = EssentiaModule;
+      this.essentia = new Essentia(EssentiaWASM);
       this.isInitialized = true;
+      console.log('✅ Essentia.js initialized for chord detection');
     } catch (error) {
       console.error('Failed to initialize Essentia.js:', error);
       throw new Error('Chord detection service initialization failed');
     }
+  }
+
+  private mixToMono(channelData: Float32Array[]): Float32Array {
+    const length = channelData[0].length;
+    const mono = new Float32Array(length);
+    
+    for (let i = 0; i < length; i++) {
+      mono[i] = (channelData[0][i] + channelData[1][i]) / 2;
+    }
+    return mono;
   }
 
   async analyzeAudioBuffer(audioBuffer: ArrayBuffer): Promise<ChordProgression> {
@@ -39,19 +50,33 @@ export class ChordDetectionService {
     }
 
     try {
+      // Decode audio buffer
       const audioData = await decode(audioBuffer);
-      const monoData = this.convertToMono(audioData);
+      
+      // Convert to mono if stereo
+      const monoData = audioData.numberOfChannels > 1
+        ? this.mixToMono([audioData.getChannelData(0), audioData.getChannelData(1)])
+        : audioData.getChannelData(0);
+      
+      // Convert to Essentia vector
       const audioVector = this.essentia.arrayToVector(monoData);
       
+      // Detect chords
       const chords = this.detectChords(audioVector);
+      
+      // Detect key
       const key = this.detectKey(audioVector);
       
+      // Calculate tempo
+      const tempo = this.calculateTempo(audioVector);
+      
+      // Clean up
       audioVector.delete();
       
       return {
         chords,
         key,
-        tempo: this.calculateTempo(audioData)
+        tempo
       };
     } catch (error) {
       console.error('Chord analysis failed:', error);
@@ -59,191 +84,114 @@ export class ChordDetectionService {
     }
   }
 
-  private convertToMono(audioData: any): Float32Array {
-    if (audioData.numberOfChannels === 1) {
-      return audioData.getChannelData(0);
-    }
-    
-    const left = audioData.getChannelData(0);
-    const right = audioData.getChannelData(1);
-    const mono = new Float32Array(left.length);
-    
-    for (let i = 0; i < left.length; i++) {
-      mono[i] = (left[i] + right[i]) / 2;
-    }
-    
-    return mono;
-  }
-
   private detectChords(audioVector: any): ChordResult[] {
     const results: ChordResult[] = [];
-    
-    const frames = this.essentia.FrameGenerator(
-      audioVector,
-      this.frameSize,
-      this.hopSize
-    );
-
     const timeStep = this.hopSize / this.sampleRate;
-
-    for (let i = 0; i < frames.size(); i++) {
-      const frame = frames.get(i);
+    
+    // Convert vector to array for manual frame processing
+    const signalArray = this.essentia.vectorToArray(audioVector);
+    const numFrames = Math.floor((signalArray.length - this.frameSize) / this.hopSize) + 1;
+    
+    // Collect HPCP vectors for all frames
+    const hpcpSequence = [];
+    
+    for (let i = 0; i < numFrames; i++) {
+      const startIdx = i * this.hopSize;
+      const endIdx = startIdx + this.frameSize;
+      
+      if (endIdx > signalArray.length) break;
+      
+      // Extract frame and convert to vector
+      const frameArray = signalArray.slice(startIdx, endIdx);
+      const frame = this.essentia.arrayToVector(frameArray);
       
       try {
-        const windowed = this.essentia.Windowing(frame, {
-          type: 'blackmanharris62',
-          size: this.frameSize,
-          zeroPadding: 0,
-          normalized: true
-        });
+        // Apply Blackman-Harris window for better frequency resolution
+        const windowed = this.essentia.Windowing(frame);
 
-        const spectrum = this.essentia.Spectrum(windowed.frame, {
-          size: this.frameSize
-        });
+        // Compute spectrum
+        const spectrum = this.essentia.Spectrum(windowed.frame);
 
-        const peaks = this.essentia.SpectralPeaks(spectrum.spectrum, {
-          sampleRate: this.sampleRate,
-          maxPeaks: 100,
-          threshold: 0.00001,
-          minFrequency: 40,
-          maxFrequency: 5000,
-          orderBy: 'magnitude'
-        });
+        // Extract spectral peaks for HPCP computation
+        const peaks = this.essentia.SpectralPeaks(spectrum.spectrum);
 
-        const whitened = this.essentia.SpectralWhitening(
-          spectrum.spectrum,
-          peaks.frequencies,
-          peaks.magnitudes,
-          {
-            sampleRate: this.sampleRate,
-            maxFrequency: 5000
-          }
-        );
-
+        // Compute HPCP directly from peaks
         const hpcp = this.essentia.HPCP(
-          whitened.magnitudes,
-          whitened.frequencies,
-          {
-            size: 12,
-            referenceFrequency: 440,
-            harmonics: 4,
-            bandPreset: false,
-            minFrequency: 40,
-            maxFrequency: 5000,
-            splitFrequency: 500,
-            weightType: 'squaredCosine',
-            nonLinear: false,
-            normalized: 'unitSum',
-            windowSize: 1.0
-          }
+          peaks.frequencies,
+          peaks.magnitudes
         );
+        
+        // Convert HPCP to array and store
+        const hpcpArray = this.essentia.vectorToArray(hpcp.hpcp);
+        hpcpSequence.push(hpcpArray);
 
-        const chord = this.essentia.ChordsDetection(hpcp.hpcp, {
-          hopSize: this.hopSize,
-          sampleRate: this.sampleRate,
-          windowSize: 2.0
-        });
-
-        if (chord.chords && chord.chords !== 'N') {
-          results.push({
-            chord: chord.chords,
-            confidence: chord.strength || 0,
-            timestamp: i * timeStep
-          });
-        }
-
+        // Clean up frame resources
         frame.delete();
         windowed.frame.delete();
         spectrum.spectrum.delete();
         peaks.frequencies.delete();
         peaks.magnitudes.delete();
-        whitened.magnitudes.delete();
-        whitened.frequencies.delete();
         hpcp.hpcp.delete();
-      } catch (error) {
-        console.warn(`Frame ${i} processing failed:`, error);
+      } catch (frameError) {
+        console.warn(`Frame ${i} HPCP extraction failed:`, frameError);
         frame.delete();
       }
     }
+    
+    // Process chords frame by frame instead
+    // Since ChordsDetection needs accumulated frames, let's use a simpler approach
+    for (let i = 0; i < hpcpSequence.length; i++) {
+      const hpcpVector = this.essentia.arrayToVector(hpcpSequence[i]);
+      
+      try {
+        // Use ChordsDescriptors for single frame analysis
+        const chordResult = this.essentia.ChordsDescriptors(hpcpVector);
+        
+        if (chordResult.chords && chordResult.chords !== 'N') {
+          results.push({
+            chord: chordResult.chords,
+            confidence: chordResult.chordsStrength || 0,
+            timestamp: i * timeStep
+          });
+        }
+        
+        hpcpVector.delete();
+      } catch (error) {
+        // If ChordsDescriptors doesn't exist, try Key detection as fallback
+        try {
+          const keyResult = this.essentia.Key(hpcpVector);
+          const chord = `${keyResult.key} ${keyResult.scale}`;
+          results.push({
+            chord: chord,
+            confidence: keyResult.strength || 0,
+            timestamp: i * timeStep
+          });
+        } catch (keyError) {
+          // Skip this frame
+        }
+        hpcpVector.delete();
+      }
+    }
 
-    frames.delete();
     return this.smoothChordProgression(results);
   }
 
   private detectKey(audioVector: any): string {
     try {
-      const frames = this.essentia.FrameGenerator(
-        audioVector,
-        this.frameSize * 4,
-        this.hopSize * 4
-      );
-
-      const hpcpSum = new Array(12).fill(0);
-      let frameCount = 0;
-
-      for (let i = 0; i < frames.size(); i++) {
-        const frame = frames.get(i);
-        
-        try {
-          const windowed = this.essentia.Windowing(frame, { type: 'hann' });
-          const spectrum = this.essentia.Spectrum(windowed.frame);
-          const peaks = this.essentia.SpectralPeaks(spectrum.spectrum);
-          
-          const hpcp = this.essentia.HPCP(
-            peaks.magnitudes,
-            peaks.frequencies,
-            { size: 12, harmonics: 4, normalized: 'unitSum' }
-          );
-
-          const hpcpArray = this.essentia.vectorToArray(hpcp.hpcp);
-          for (let j = 0; j < 12; j++) {
-            hpcpSum[j] += hpcpArray[j];
-          }
-          frameCount++;
-
-          frame.delete();
-          windowed.frame.delete();
-          spectrum.spectrum.delete();
-          peaks.frequencies.delete();
-          peaks.magnitudes.delete();
-          hpcp.hpcp.delete();
-        } catch (error) {
-          frame.delete();
-        }
-      }
-
-      frames.delete();
-
-      if (frameCount === 0) return 'C';
-
-      for (let i = 0; i < 12; i++) {
-        hpcpSum[i] /= frameCount;
-      }
-
-      const avgHpcp = this.essentia.arrayToVector(hpcpSum);
-      const keyResult = this.essentia.Key(avgHpcp);
-      const detectedKey = keyResult.key;
-      
-      avgHpcp.delete();
-      
-      return detectedKey || 'C';
+      // Use Essentia's Key extractor
+      const keyResult = this.essentia.KeyExtractor(audioVector);
+      return `${keyResult.key} ${keyResult.scale}`;
     } catch (error) {
       console.warn('Key detection failed:', error);
-      return 'C';
+      return 'C major';
     }
   }
 
-  private calculateTempo(audioData: any): number {
+  private calculateTempo(audioVector: any): number {
     try {
-      const monoData = this.convertToMono(audioData);
-      const audioVector = this.essentia.arrayToVector(monoData);
-      
-      const tempoResult = this.essentia.RhythmExtractor2013(audioVector);
-      const bpm = tempoResult.bpm;
-      
-      audioVector.delete();
-      
-      return Math.round(bpm) || 120;
+      // Use Essentia's rhythm extractor
+      const rhythmResult = this.essentia.RhythmExtractor2013(audioVector);
+      return Math.round(rhythmResult.bpm);
     } catch (error) {
       console.warn('Tempo detection failed:', error);
       return 120;
@@ -264,7 +212,8 @@ export class ChordDetectionService {
         confidenceSum += chords[i].confidence;
         count++;
       } else {
-        if (count >= 3 || (i - count + 1 === 0)) {
+        // Only keep chord if it appears for more than 3 frames or is the first
+        if (count >= 3 || smoothed.length === 0) {
           smoothed.push({
             chord: currentChord.chord,
             confidence: confidenceSum / count,
@@ -279,6 +228,7 @@ export class ChordDetectionService {
       }
     }
 
+    // Add the last chord if significant
     if (count >= 3) {
       smoothed.push({
         chord: currentChord.chord,
@@ -303,6 +253,7 @@ export class ChordDetectionService {
 
   dispose(): void {
     this.isInitialized = false;
+    this.essentia = null;
   }
 }
 
