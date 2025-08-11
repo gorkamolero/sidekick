@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, Music2, Palette, Wrench, Book } from 'lucide-react';
-import { AbletonOSCSetup } from './AbletonOSCSetup';
 import { MusicServiceSelector } from './MusicServiceSelector';
 import { ThemeSelector } from './ThemeSelector';
-import { SetupGuide } from './SetupGuide';
 
 export function SettingsPanel() {
   const [activeTab, setActiveTab] = useState<'setup' | 'config'>('config');
@@ -17,7 +15,6 @@ export function SettingsPanel() {
   return (
     <div className="flex-1 overflow-y-auto min-h-0 bg-[var(--color-void)]">
       <div className="p-6 max-w-3xl mx-auto space-y-6">
-        {/* Header with tabs */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Settings className="w-4 h-4 text-[var(--color-accent)]" />
@@ -26,7 +23,6 @@ export function SettingsPanel() {
             </h2>
           </div>
           
-          {/* Tab buttons */}
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('setup')}
@@ -53,12 +49,10 @@ export function SettingsPanel() {
           </div>
         </div>
 
-        {/* Show different content based on active tab */}
         {activeTab === 'setup' ? (
-          <SetupGuide />
+          <div>Setup content removed</div>
         ) : (
           <>
-            {/* Ableton OSC Setup Section */}
             <div>
           <div className="flex items-center gap-2 mb-3">
             <Music2 className="w-4 h-4 text-[var(--color-accent)]" />
@@ -66,10 +60,9 @@ export function SettingsPanel() {
               DAW INTEGRATION
             </h3>
           </div>
-          <AbletonOSCSetup />
+          <div>Ableton OSC setup moved to first-time setup</div>
         </div>
 
-        {/* Music Service Section */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Music2 className="w-4 h-4 text-[var(--color-accent)]" />
@@ -80,7 +73,6 @@ export function SettingsPanel() {
           <MusicServiceSelector />
         </div>
 
-        {/* Theme Section */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Palette className="w-4 h-4 text-[var(--color-accent)]" />
@@ -91,7 +83,6 @@ export function SettingsPanel() {
           <ThemeSelector />
         </div>
 
-        {/* Developer Options */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Wrench className="w-4 h-4 text-[var(--color-accent)]" />
