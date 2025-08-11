@@ -131,31 +131,6 @@ export function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
           <p className="text-gray-400">Let's get your environment set up</p>
         </div>
 
-        {/* Wrong Mode Alert */}
-        {isNotInTauri && (
-          <div className="p-6 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <div className="flex items-start gap-4">
-              <X className="w-6 h-6 text-red-400 flex-shrink-0 mt-1" />
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-red-400 mb-1">Wrong Start Command</h3>
-                  <p className="text-sm text-red-400/80">
-                    You're running in dev mode which doesn't have backend features.
-                  </p>
-                </div>
-                
-                <div className="bg-black/50 rounded p-3">
-                  <p className="text-xs text-gray-400 mb-2">Please stop the current process and run:</p>
-                  <code className="text-sm text-green-400 font-mono">npm run tauri:dev</code>
-                </div>
-
-                <p className="text-xs text-gray-400">
-                  This will start both the frontend and the Rust backend with full functionality.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Requirements Checklist */}
         {!isNotInTauri && (
