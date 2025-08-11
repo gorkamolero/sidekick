@@ -24,7 +24,7 @@
         "decorations": true,
         "transparent": false,
         "skipTaskbar": false,
-        "dragDropEnabled": true,
+        "dragDropEnabled": false,
         "windowEffects": {
           "effects": ["sidebar"],
           "state": "followsWindowActiveState"
