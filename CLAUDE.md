@@ -1,68 +1,99 @@
 # Sidekick Project Status
 
 ## Project Overview
-Building an Electron app that sits beside Ableton Live, generates AI music loops, and allows drag-and-drop into DAW tracks.
+AI-powered music loop generator that integrates with Ableton Live, featuring conversational AI, music generation, and drag-and-drop functionality.
 
 ## Linear Project Information
 - **Team**: GorkaMolero (ID: 26ed7749-d07f-4aa0-aff1-be669067d430)
 - **Project**: Sidekick (ID: 767c232e-198b-4425-82ab-9cc47218c459)
 - **Active Issues**: Track progress at https://linear.app/gorkamolero/
 
-## Current Status (Phase 1 ✓ Complete)
-- ✅ Electron + Vite + TypeScript setup complete
-- ✅ React integration configured
-- ✅ Git repository initialized with remote origin: https://github.com/gorkamolero/sidekick.git
-- ✅ Basic app structure ready with:
-  - Vite configured for React
-  - index.html with root div
-  - index.tsx as main entry point
-  - App.tsx component created
-  - Dark theme CSS applied
+## Current Status (~70-80% Complete)
+
+### ✅ Implemented & Working
+- **Tauri desktop app** (not Electron) with React + TypeScript
+- **Full conversational AI interface** using AI SDK v5
+- **Multi-tab conversation management** with persistent storage
+- **Message streaming and tool calling** 
+- **AI Elements UI components** (conversation, message, response, reasoning, task)
+- **Agent system** using Mastra framework in sidecar process
+- **OpenRouter integration** with multiple model support
+- **Music generation manager** with adapter pattern (MusicGen, Suno)
+- **Audio analysis** using Essentia.js
+- **Drag-and-drop audio files** with native OS support
+- **IndexedDB persistence** for conversations and generations
+- **Multiple theme support** including animated themes
+- **Zustand state management** with persistence
+- **Tailwind CSS** fully configured with custom themes
+
+### 🚧 Partially Implemented
+- **Ableton Live integration** - Mock data only, no real connection
+- **Music generation services** - Structure exists, needs API connections
+- **Audio preview** - Basic implementation, needs enhancement
+
+### ❌ Not Yet Implemented
+- **Real Ableton Live communication** via Ableton Link or Max4Live
+- **Actual BPM/key detection** from DAW projects
+- **Waveform visualization** (WaveSurfer.js installed but unused)
+- **Google Lyria integration**
+- **Stem separation**
 
 ## Project Structure
 ```
 sidekick/
 ├── src/
-│   ├── main.ts (Electron main process)
-│   ├── preload.ts (Preload script)
-│   ├── index.tsx (React entry point)
-│   ├── App.tsx (Main React component)
-│   └── index.css (Global styles)
-├── index.html
-├── package.json
-├── vite.*.config.ts (Vite configs)
-└── forge.config.ts (Electron Forge config)
+│   ├── main/           # Tauri main process
+│   ├── components/     # React components
+│   │   ├── ai/        # AI SDK Elements components
+│   │   ├── ui/        # UI components
+│   │   └── ...
+│   ├── hooks/         # Custom React hooks
+│   ├── lib/           # Utilities and helpers
+│   ├── services/      # Service layer
+│   │   ├── ai/       # AI service implementations
+│   │   └── music/     # Music generation services
+│   ├── stores/        # Zustand stores
+│   └── types/         # TypeScript types
+├── sidecar/           # Mastra agent sidecar process
+├── src-tauri/         # Tauri backend
+└── ...
 ```
 
-## Next Steps
-- Phase 2: Install all required dependencies
-- Phase 3: Configure Tailwind CSS
-- Phase 4: Create complete project structure
-- Phase 5: Build core components
-- Phase 6: Implement AI generation
-- Phase 7: Testing
-- Phase 8: Polish and deployment
+## API Keys Required
+- `OPENROUTER_API_KEY` - For AI models ✅ Added
+- `REPLICATE_API_TOKEN` - For music generation ✅ Added
 
-## Key Features to Implement
-1. AI music loop generation (Google Lyria, Suno, Udio)
-2. Drag-and-drop to Ableton Live
-3. Project context awareness (BPM, key detection)
-4. Audio preview with waveform visualization
-5. Generation history management
-6. Always-on-top narrow panel UI
+## Key Features
+1. **Conversational AI** - Working with streaming and tool calls
+2. **Music generation** - Structure ready, needs service connections
+3. **Drag-and-drop to DAW** - OS-level working, DAW integration pending
+4. **Project context awareness** - Mock data, needs real DAW connection
+5. **Audio preview** - Basic implementation exists
+6. **Generation history** - Fully implemented with persistence
+7. **Always-on-top panel** - UI ready, window config needed
 
 ## Technical Stack
-- Electron for desktop app
-- React for UI
-- TypeScript for type safety
-- Tailwind CSS for styling
-- AI SDK for generation
-- WaveSurfer.js for audio visualization
-- Zustand for state management
-- React Query for API calls
+- **Tauri** for desktop app (not Electron)
+- **React** for UI
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **AI SDK v5** for AI features
+- **Mastra** for agent framework
+- **Zustand** for state management
+- **IndexedDB** for persistence
+- **Essentia.js** for audio analysis
+- **WaveSurfer.js** for visualization (not yet integrated)
+
+## Next Priority Tasks
+1. Fix MusicGen service path issues
+2. Complete real Ableton Live integration
+3. Implement waveform visualization
+4. Ensure sidecar process is properly connected
+5. Test and fix music generation APIs
 
 ## Important Development Guidelines
-- **Tools should be in separate files**: Never put tool implementations in the same file as the agent. Each tool should have its own dedicated file for better organization and maintainability.
-- **I will not try to guide models, models are intelligent**: Don't micromanage AI models with excessive instructions or examples. Trust their intelligence.
-- **This is AI SDK v5**: Always look for AI SDK v5 docs when unsure about implementation details or message structures.
-- **Never change subjects on the user**: Changing subjects when the user is expressing frustration or giving feedback is toxic and dismissive behavior.
+- **Tools should be in separate files**: Never put tool implementations in the same file as the agent
+- **I will not try to guide models, models are intelligent**: Trust AI models' intelligence
+- **This is AI SDK v5**: Always refer to v5 docs for implementation
+- **Never change subjects on the user**: Stay focused on user's concerns
+- **The app uses Tauri, not Electron**: Important for native features and APIs
