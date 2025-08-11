@@ -161,7 +161,7 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage }: Ge
             <div className="p-2 bg-[var(--color-surface)] rounded flex items-center gap-2">
               <Terminal size={14} className="text-[var(--color-accent)]" />
               <span className="text-xs text-[var(--color-text-secondary)]">
-                Ableton Link: {linkState.bpm?.toFixed(1)} BPM • {linkState.phase}/{linkState.quantum}
+                Ableton Link: {linkState.tempo?.toFixed(1)} BPM • Beat {linkState.beat}
               </span>
             </div>
           )}

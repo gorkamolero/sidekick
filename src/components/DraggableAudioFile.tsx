@@ -30,11 +30,7 @@ export const DraggableAudioFile: React.FC<DraggableAudioFileProps> = ({
       // Use Tauri drag plugin to start native drag
       await startDrag({
         item: [filePath],
-        // Optionally provide an icon for the drag preview
-        // icon: dragRef.current ? await domToPng(dragRef.current, {
-        //   scale: 2,
-        //   backgroundColor: 'transparent'
-        // }) : undefined
+        icon: '',
       });
     } catch (err) {
       console.error('Failed to start drag:', err);

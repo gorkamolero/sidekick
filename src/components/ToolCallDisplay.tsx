@@ -22,17 +22,9 @@ export function ToolCallDisplay({
   
   if (toolParts.length === 0) return null;
 
-  // Debug logging to understand the structure
-  console.log('ToolCallDisplay message.parts:', message.parts);
-  console.log('Tool parts:', toolParts);
-
   return (
     <div className={cn("space-y-2 mt-2", className)}>
       {toolParts.map((toolPart: ToolUIPart, index: number) => {
-        // Debug each tool part
-        console.log(`Tool part ${index}:`, toolPart);
-        console.log('Tool part type:', toolPart.type);
-        console.log('Tool part state:', toolPart.state);
         
         // Extract tool name from type (e.g., 'tool-testComponent' -> 'testComponent')
         const toolName = toolPart.type.replace('tool-', '');
@@ -61,7 +53,7 @@ export function ToolCallDisplay({
 
         const renderOutput = () => {
           if (!toolPart.output) return null;
-          const result = toolPart.output;
+          const result = toolPart.output as any;
 
           // Special handling for test component
           if (toolName === "test-component" || toolName === "testComponent") {
@@ -87,28 +79,71 @@ export function ToolCallDisplay({
           // Special handling for audio analysis
           if (toolName === "analyzeAudio" && result.status === "success") {
             return (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="text-sm font-medium text-green-600">
                   ✓ {result.finalMessage || "Analysis complete"}
                 </div>
+                
+                {/* Technical Analysis Results */}
                 {result.technical && (
-                  <div className="grid grid-cols-3 gap-4 text-xs">
-                    <div>
-                      <span className="text-muted-foreground">BPM:</span>{" "}
-                      <span className="font-mono">{result.technical.bpm?.toFixed(0)}</span>
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-[var(--color-text-secondary)]">
+                      Technical Analysis:
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Key:</span>{" "}
-                      <span className="font-mono">{result.technical.key} {result.technical.scale}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Energy:</span>{" "}
-                      <span className="font-mono">
-                        {result.technical.energy > 100000 ? "High" : 
-                         result.technical.energy > 50000 ? "Medium" : "Low"}
-                      </span>
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-[var(--color-surface)] p-2 rounded">
+                      <div>
+                        <span className="text-[var(--color-text-dim)]">BPM:</span>{" "}
+                        <span className="font-mono text-[var(--color-accent)]">{result.technical.bpm?.toFixed(0)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--color-text-dim)]">Key:</span>{" "}
+                        <span className="font-mono text-[var(--color-accent)]">{result.technical.key} {result.technical.scale}</span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--color-text-dim)]">Energy:</span>{" "}
+                        <span className="font-mono text-[var(--color-accent)]">
+                          {result.technical.energy > 100000 ? "High" : 
+                           result.technical.energy > 50000 ? "Medium" : "Low"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--color-text-dim)]">Loudness:</span>{" "}
+                        <span className="font-mono text-[var(--color-accent)]">{result.technical.loudness?.toFixed(1)} dB</span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--color-text-dim)]">Onset Rate:</span>{" "}
+                        <span className="font-mono text-[var(--color-accent)]">{result.technical.onsetRate?.toFixed(2)}/s</span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--color-text-dim)]">Danceability:</span>{" "}
+                        <span className="font-mono text-[var(--color-accent)]">{result.technical.danceability?.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
+                )}
+                
+                {/* Creative Analysis Results */}
+                {result.creative && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-[var(--color-text-secondary)]">
+                      Creative Analysis:
+                    </div>
+                    <div className="text-xs bg-[var(--color-surface)] p-2 rounded text-[var(--color-text-primary)] whitespace-pre-wrap">
+                      {result.creative}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Full Analysis Message */}
+                {result.message && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)]">
+                      View full analysis
+                    </summary>
+                    <div className="mt-2 bg-[var(--color-surface)] p-2 rounded text-[var(--color-text-primary)] whitespace-pre-wrap">
+                      {result.message}
+                    </div>
+                  </details>
                 )}
               </div>
             );
