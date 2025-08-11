@@ -4,7 +4,6 @@ use std::net::{SocketAddr, UdpSocket};
 use std::time::Duration;
 use rosc::{OscMessage, OscPacket, OscType};
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AbletonInfo {
@@ -46,7 +45,7 @@ fn get_ableton_user_library_path() -> Result<PathBuf, String> {
 
 /// Install AbletonOSC to Ableton's Remote Scripts folder
 #[tauri::command]
-pub async fn install_ableton_osc(app_handle: tauri::AppHandle) -> Result<InstallResult, String> {
+pub async fn install_ableton_osc() -> Result<InstallResult, String> {
     let remote_scripts_path = get_ableton_user_library_path()?;
     
     // Create the Remote Scripts directory if it doesn't exist
