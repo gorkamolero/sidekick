@@ -1,12 +1,10 @@
 import React, { useState, useRef } from "react";
-import { Terminal, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useStore } from "../lib/store";
 import { AudioDropZone } from "./AudioDropZone";
 import { GenerationMode } from "./GenerationPanel/ModeSelector";
 import { ExpandableModeSelector } from "./GenerationPanel/ExpandableModeSelector";
-import { ProjectInfoDisplay } from "./GenerationPanel/ProjectInfoDisplay";
 import { PromptInput } from "./GenerationPanel/PromptInput";
-import { ExecuteButton } from "./GenerationPanel/ExecuteButton";
 import { getModeInstructions } from "./GenerationPanel/modeInstructions";
 import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
 import tauriAPI from "../lib/tauri-api";
@@ -23,7 +21,7 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage, mess
   const [mode, setMode] = useState<GenerationMode>("loop");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
-  const { currentProject, updateProject, linkState, attachedFile, setAttachedFile } = useStore();
+  const { attachedFile, setAttachedFile } = useStore();
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = async () => {
@@ -147,37 +145,6 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage, mess
               <Send className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]" />
             </button>
           </div>
-        </div>
-
-        <div className="mt-3 space-y-3">
-          {currentProject ? (
-            <ProjectInfoDisplay
-              project={currentProject}
-              onProjectUpdate={updateProject}
-            />
-          ) : (
-            <div className="p-2 bg-[var(--color-surface)] rounded text-center">
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                No Ableton project detected
-              </p>
-              <button className="mt-1 text-xs text-[var(--color-accent)] hover:underline">
-                Connect to Ableton
-              </button>
-            </div>
-          )}
-
-          {linkState.isConnected && (
-            <div className="p-2 bg-[var(--color-surface)] rounded flex items-center gap-2">
-              <Terminal size={14} className="text-[var(--color-accent)]" />
-              <span className="text-xs text-[var(--color-text-secondary)]">
-                Ableton Link: {linkState.tempo?.toFixed(1)} BPM • Beat {linkState.beat}
-              </span>
-            </div>
-          )}
-
-          {isProcessing && (
-            <ExecuteButton onClick={cancelMessage} />
-          )}
         </div>
       </div>
     </div>
