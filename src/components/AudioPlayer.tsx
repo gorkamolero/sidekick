@@ -138,29 +138,22 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration, showCho
   const dragRef = useRef<HTMLDivElement>(null);
   
   const handleMouseDown = async (event: React.MouseEvent<HTMLDivElement>) => {
-    // Check if the click is on a button or inside a button
+    // Check if the click is on a button (but NOT the grip handle)
     const target = event.target as HTMLElement;
     const isButton = target.tagName === 'BUTTON' || 
-                    target.closest('button') !== null ||
-                    target.tagName === 'svg' ||
-                    target.closest('svg') !== null;
+                    target.closest('button') !== null;
     
     if (isButton) {
-      console.log('Ignoring button/icon click');
       return;
     }
     
     if (!localFilePath) {
-      console.log('No localFilePath, cannot drag');
       return;
     }
     
-    event.preventDefault();
     setIsDragging(true);
     
     try {
-      console.log('Starting drag with:', localFilePath);
-      
       // Create a screenshot of the audio player as drag image
       const dragElement = dragRef.current;
       if (!dragElement) return;
@@ -176,10 +169,7 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration, showCho
         item: [localFilePath],
         icon: dragImage
       });
-      
-      console.log('Drag started successfully');
     } catch (err) {
-      console.error('Drag failed:', err);
       alert(`Drag failed: ${err}`);
     } finally {
       setIsDragging(false);

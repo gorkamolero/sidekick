@@ -163,10 +163,10 @@ export function ToolCallDisplay({
               result.status === "success" && result.audioUrl) {
             return (
               <div className="space-y-3">
-                <div className="text-sm font-medium text-green-600">
+                <div className="text-xs font-medium text-green-600">
                   ✓ {result.message || "Music generated successfully"}
                   {result.service && (
-                    <span className="ml-1 text-xs text-muted-foreground">
+                    <span className="ml-1 text-[10px] text-muted-foreground">
                       via {result.service}
                     </span>
                   )}

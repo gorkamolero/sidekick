@@ -68,11 +68,12 @@ function AppContent() {
     console.log("App mounted");
 
     // Prevent default drop behavior to avoid loading files into the browser
-    // But only for drops outside our dropzone
+    // But only for drops outside our dropzone AND not when dragging FROM audio players
     const preventDefault = (e: DragEvent) => {
-      // Only prevent if not in a dropzone area
+      // Only prevent if not in a dropzone area AND not dragging from audio player
       const target = e.target as HTMLElement;
-      if (!target.closest('[data-dropzone]')) {
+      const isAudioPlayerDrag = target.closest('[data-audio-player-drag]');
+      if (!target.closest('[data-dropzone]') && !isAudioPlayerDrag) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -81,7 +82,8 @@ function AppContent() {
     const preventDrop = (e: DragEvent) => {
       // Always prevent drop to avoid loading files in browser
       const target = e.target as HTMLElement;
-      if (!target.closest('[data-dropzone]')) {
+      const isAudioPlayerDrag = target.closest('[data-audio-player-drag]');
+      if (!target.closest('[data-dropzone]') && !isAudioPlayerDrag) {
         e.preventDefault();
         e.stopPropagation();
         return false;

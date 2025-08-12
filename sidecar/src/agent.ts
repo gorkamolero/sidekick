@@ -200,7 +200,7 @@ export const agent = new Agent({
   id: 'sidekick-agent',
   name: 'Sidekick',
   description: 'AI assistant for music producers',
-  model: openrouter('moonshotai/kimi-k2'),
+  model: openrouter('anthropic/claude-sonnet-4'),
   instructions: SIDEKICK_SYSTEM_PROMPT,
   tools: {
     generateMusic,
