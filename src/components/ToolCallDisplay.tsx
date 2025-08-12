@@ -50,6 +50,12 @@ export function ToolCallDisplay({
           if (toolName === "test-component" || toolName === "testComponent") {
             return "Test Component";
           }
+          if (toolName === "abletonDocs" || toolName === "abletonDocsQuery") {
+            return "Gathering Power";
+          }
+          if (toolName === "oscExecutor") {
+            return "Ableton Guy";
+          }
           return toolName;
         };
 
@@ -175,7 +181,57 @@ export function ToolCallDisplay({
             );
           }
 
-          // Default output
+          // Special handling for abletonDocs
+          if ((toolName === "abletonDocs" || toolName === "abletonDocsQuery") && result.status === "success") {
+            return (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-green-600">
+                  ✓ Documentation Found
+                </div>
+                {result.answer && (
+                  <div className="text-xs bg-[var(--color-surface)] p-2 rounded text-[var(--color-text-primary)] whitespace-pre-wrap">
+                    {result.answer}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Special handling for oscExecutor
+          if (toolName === "oscExecutor" && result.status === "success") {
+            return (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-green-600">
+                  ✓ {result.executedCount || 0} OSC command{result.executedCount !== 1 ? 's' : ''} sent
+                </div>
+                {result.commands && result.commands.length > 0 && (
+                  <div className="space-y-1">
+                    {result.commands.map((cmd: any, idx: number) => (
+                      <div key={idx} className="text-xs bg-[var(--color-surface)] p-1 rounded font-mono">
+                        {cmd.path} {cmd.args?.join(' ') || ''}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {result.responses && result.responses.length > 0 && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)]">
+                      View responses
+                    </summary>
+                    <div className="mt-1 space-y-1">
+                      {result.responses.map((resp: any, idx: number) => (
+                        <div key={idx} className="bg-[var(--color-surface)] p-1 rounded">
+                          {JSON.stringify(resp)}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            );
+          }
+
+          // Default output for other tools
           return (
             <div className="text-sm">
               <div className={cn(
@@ -184,6 +240,17 @@ export function ToolCallDisplay({
                 {result.status === "success" ? "✓" : "✗"} {result.message || 
                   (result.status === "success" ? "Completed successfully" : "Failed")}
               </div>
+              {/* Show any additional data that might be in the result */}
+              {result.status === "success" && Object.keys(result).length > 2 && (
+                <details className="text-xs mt-1">
+                  <summary className="cursor-pointer text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)]">
+                    View details
+                  </summary>
+                  <div className="mt-1 bg-[var(--color-surface)] p-2 rounded">
+                    <pre>{JSON.stringify(result, null, 2)}</pre>
+                  </div>
+                </details>
+              )}
             </div>
           );
         };

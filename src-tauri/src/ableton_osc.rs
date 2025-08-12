@@ -164,7 +164,11 @@ pub async fn check_ableton_osc_installed() -> Result<bool, String> {
     println!("Checking for AbletonOSC at: {:?}", target_path);
     println!("Path exists: {}", target_path.exists());
     
-    Ok(target_path.exists())
+    // Check if the directory exists and contains the main Python file
+    let exists = target_path.exists() && target_path.join("__init__.py").exists();
+    println!("AbletonOSC installation check result: {}", exists);
+    
+    Ok(exists)
 }
 
 /// Recursively copy a directory

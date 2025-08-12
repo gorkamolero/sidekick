@@ -128,7 +128,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         ableton_osc::test_ableton_connection,
         ableton_osc::get_ableton_info,
         ableton_osc::set_ableton_playing,
-        ableton_osc::set_ableton_tempo
+        ableton_osc::set_ableton_tempo,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -161,6 +161,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         
         // Set window to full height but keep width at 400px
         window.set_size(tauri::LogicalSize::new(400.0, screen_height as f64)).unwrap();
+        
+        // Set max width constraint to prevent resizing beyond 400px
+        window.set_max_size(Some(tauri::LogicalSize::new(400.0, screen_height as f64))).unwrap();
         
         // Position it at the right edge using the positioner plugin
         let _ = window.move_window(Position::RightCenter);

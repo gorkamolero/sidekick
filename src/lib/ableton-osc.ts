@@ -143,4 +143,51 @@ export class AbletonOSC {
   getConnectionStatus(): boolean {
     return this.isConnected;
   }
+
+  /**
+   * Execute arbitrary Python code in Ableton's Live API context
+   * This gives full control over Ableton through code
+   */
+  async executeCode(code: string, context?: Record<string, any>): Promise<{
+    success: boolean;
+    result?: string;
+    error?: string;
+  }> {
+    try {
+      const response = await invoke('execute_ableton_code', {
+        code,
+        context: context ? JSON.stringify(context) : undefined
+      });
+      return response as any;
+    } catch (error) {
+      console.error('Failed to execute Ableton code:', error);
+      return {
+        success: false,
+        error: error.toString()
+      };
+    }
+  }
+
+  /**
+   * Evaluate a Python expression in Ableton
+   */
+  async evaluateExpression(expression: string): Promise<{
+    success: boolean;
+    value?: any;
+    error?: string;
+  }> {
+    try {
+      const response = await invoke('evaluate_ableton_expression', {
+        expression
+      });
+      return response as any;
+    } catch (error) {
+      console.error('Failed to evaluate expression:', error);
+      return {
+        success: false,
+        error: error.toString()
+      };
+    }
+  }
+
 }

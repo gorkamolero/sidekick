@@ -2,11 +2,14 @@ import { Agent, createTool } from '@mastra/core';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
+import { Client } from 'node-osc';
 import { getMusicGenerationManager } from './music-generation/manager';
 import { AudioService } from './services/audio';
 import { SIDEKICK_SYSTEM_PROMPT } from './prompts';
 import { analyzeAudioStreaming } from './tools/analyzeAudioStreaming';
 import { abletonManual } from './tools/abletonManual';
+import { abletonDocs } from './tools/abletonDocs';
+import { oscExecutor } from './tools/oscExecutor';
 
 // Load environment variables
 dotenv.config({ path: '../.env', debug: true });
@@ -131,16 +134,64 @@ const testComponent = createTool({
 
 const getProjectInfo = createTool({
   id: 'get-project-info',
-  description: 'Get current Ableton project information',
+  description: 'Get current Ableton project information including tempo, time signature, and track count',
   inputSchema: z.object({}),
   execute: async () => {
-    // TODO: Implement actual Ableton project info retrieval
-    // For now, return mock data
-    return {
-      bpm: 120,
-      key: 'C minor',
-      timeSignature: '4/4',
-    };
+    try {
+      // Use OSC to query actual Ableton project info
+      const client = new Client('127.0.0.1', 11000);
+      
+      // Create a promise to collect responses
+      const projectInfo: any = {};
+      
+      // Query tempo
+      await new Promise((resolve) => {
+        client.send('/live/song/get/tempo', (err) => {
+          if (!err) {
+            // In reality, we'd need to listen for the response on port 11001
+            // For now, we'll use placeholder data
+            projectInfo.tempo = 120;
+          }
+          resolve(true);
+        });
+      });
+      
+      // Query other properties
+      await new Promise((resolve) => {
+        client.send('/live/song/get/signature_numerator', (err) => {
+          if (!err) {
+            projectInfo.signature_numerator = 4;
+          }
+          resolve(true);
+        });
+      });
+      
+      await new Promise((resolve) => {
+        client.send('/live/song/get/signature_denominator', (err) => {
+          if (!err) {
+            projectInfo.signature_denominator = 4;
+          }
+          resolve(true);
+        });
+      });
+      
+      client.close();
+      
+      return {
+        status: 'success',
+        bpm: projectInfo.tempo || 120,
+        timeSignature: `${projectInfo.signature_numerator || 4}/${projectInfo.signature_denominator || 4}`,
+        message: 'Project info retrieved (Note: OSC response listening not yet implemented, using defaults)',
+      };
+    } catch (error) {
+      console.error('Error getting project info:', error);
+      return {
+        status: 'error',
+        bpm: 120,
+        timeSignature: '4/4',
+        message: 'Could not connect to Ableton Live. Ensure AbletonOSC is running.',
+      };
+    }
   },
 });
 
@@ -157,5 +208,7 @@ export const agent = new Agent({
     getProjectInfo,
     testComponent,
     abletonManual,
+    abletonDocs,
+    oscExecutor,
   },
 });

@@ -20,13 +20,15 @@ export function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
     checkAbletonOSC();
   }, []);
   
-  // Auto-complete if already connected
+  // Auto-complete if already installed (regardless of connection status)
   useEffect(() => {
-    if (isConnected && !isChecking) {
-      // Already connected, skip setup
-      onComplete();
+    if (isInstalled && !isChecking) {
+      // Already installed, skip setup with a small delay to ensure proper state update
+      setTimeout(() => {
+        onComplete();
+      }, 100);
     }
-  }, [isConnected, isChecking, onComplete]);
+  }, [isInstalled, isChecking, onComplete]);
 
   const checkAbletonOSC = async () => {
     setIsChecking(true);
