@@ -153,9 +153,6 @@ export function useAgent() {
 
     // Only save if these messages belong to the current conversation
     if (messagesConversationId.current !== currentConversation?.id) {
-      console.log(
-        "⚠️ SKIPPING SAVE - messages belong to different conversation",
-      );
       return;
     }
 
@@ -218,7 +215,7 @@ export function useAgent() {
   }, [messages.length, currentConversation?.id]);
 
   const sendMessageWithAttachments = useCallback(
-    (text: string, attachments?: any[]) => {
+    (text: string, attachments?: any[], mode?: string) => {
       messagesConversationId.current = currentConversation?.id || null;
 
       // Don't send files to the AI model - the file path is already in the text message
@@ -227,24 +224,34 @@ export function useAgent() {
       console.log("📤 Sending message with attachments:", {
         text,
         attachments,
+        mode,
       });
 
       // Create message with metadata for attachments
-      const message = attachments ? {
-        text,
-        metadata: { attachments }
-      } : {
-        text
-      };
-      
-      sendMessage(
-        message,
-        {
-          body: { 
-            data: attachments ? { attachments } : undefined 
+      const message = attachments
+        ? {
+            text,
+            metadata: { attachments },
           }
-        }
-      );
+        : {
+            text,
+          };
+
+      // Get the selected music service from localStorage
+      const selectedService = localStorage.getItem('preferredMusicService') || 'musicgen';
+      
+      // Get current project info from store
+      const store = useStore.getState();
+      const projectInfo = store.currentProject;
+      
+      sendMessage(message, {
+        body: {
+          data: attachments ? { attachments } : undefined,
+          service: selectedService,
+          projectInfo: projectInfo,
+          mode: mode || 'default',
+        },
+      });
     },
     [sendMessage, currentConversation?.id],
   );

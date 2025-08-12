@@ -58,7 +58,8 @@ export class SunoAdapter implements MusicGenerationService {
       model: this.mapModelVersion(model),
       customMode: !!params.lyrics,
       instrumental: params.makeInstrumental || false,
-      lyrics: params.lyrics
+      lyrics: params.lyrics,
+      callBackUrl: 'http://localhost:3001/api/suno/callback'
     };
 
     try {
@@ -66,12 +67,20 @@ export class SunoAdapter implements MusicGenerationService {
       
       const result = await this.pollForCompletion(taskId);
       
-      if (!result.data?.audioUrl) {
+      // Get the first track from response structure
+      const responseData = result.data?.response?.sunoData;
+      if (!responseData || responseData.length === 0) {
+        throw new Error('No tracks received from Suno');
+      }
+      
+      const firstTrack = responseData[0];
+      const audioUrl = firstTrack.streamAudioUrl || firstTrack.audioUrl;
+      if (!audioUrl) {
         throw new Error('No audio URL received from Suno');
       }
 
       return {
-        audioUrl: result.data.audioUrl,
+        audioUrl: audioUrl,
         duration: result.data.duration || duration,
         format: 'mp3',
         metadata: {
@@ -147,15 +156,7 @@ export class SunoAdapter implements MusicGenerationService {
       return false;
     }
 
-    try {
-      const response = await this.axiosInstance.get('/api/v1/health', {
-        timeout: 5000
-      });
-      return response.status === 200;
-    } catch (error) {
-      console.error('Suno availability check failed:', error);
-      return false;
-    }
+    return true;
   }
 
   private async initiateGeneration(request: SunoGenerationRequest): Promise<string> {
@@ -198,7 +199,10 @@ export class SunoAdapter implements MusicGenerationService {
           throw new Error(data.msg || 'Failed to get task status');
         }
 
-        if (data.data?.status === 'SUCCESS') {
+        console.log('🔍 Suno full response:', JSON.stringify(data, null, 2));
+        console.log('🔍 Suno status check:', data.data?.status);
+
+        if (data.data?.status === 'SUCCESS' || data.data?.status === 'TEXT_SUCCESS') {
           return data;
         }
 

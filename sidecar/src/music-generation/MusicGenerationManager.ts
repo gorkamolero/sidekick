@@ -23,7 +23,7 @@ export class MusicGenerationManager {
   registerService(name: ServiceName, service: MusicGenerationService): void {
     this.services.set(name, service);
     
-    if (!this.currentService && name === this.config.activeService) {
+    if (name === this.config.activeService) {
       this.currentService = service;
     }
   }

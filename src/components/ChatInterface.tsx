@@ -11,7 +11,6 @@ import {
 } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import { Loader } from "@/components/ai-elements/loader";
-import { Task, TaskContent, TaskItem, TaskTrigger } from "@/components/ai-elements/task";
 import { Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToolCallDisplay } from "./ToolCallDisplay";
@@ -95,14 +94,39 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                     )}
                     
                     
-                    {/* Always show content if available */}
-                    {message.parts && message.parts.length > 0 && (
-                      <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
-                        {message.parts.filter((p: any) => p.type === "text" && p.text)
-                          .map((p: any) => p.text)
-                          .join("\n")}
-                      </Response>
-                    )}
+                    {/* Show thinking/reasoning in a collapsible section if present */}
+                    {message.parts && message.parts.length > 0 && (() => {
+                      const textParts = message.parts.filter((p: any) => p.type === "text" && p.text);
+                      const allText = textParts.map((p: any) => p.text).join("\n");
+                      
+                      // Check if there's thinking content (usually wrapped in <thinking> tags or similar)
+                      const thinkingMatch = allText.match(/<thinking>([\s\S]*?)<\/thinking>/);
+                      const hasThinking = thinkingMatch !== null;
+                      const thinkingContent = thinkingMatch ? thinkingMatch[1].trim() : '';
+                      const mainContent = hasThinking 
+                        ? allText.replace(/<thinking>[\s\S]*?<\/thinking>/, '').trim()
+                        : allText;
+                      
+                      return (
+                        <>
+                          {hasThinking && thinkingContent && (
+                            <details className="mb-2 text-xs">
+                              <summary className="cursor-pointer text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] font-mono">
+                                💭 View thinking process
+                              </summary>
+                              <div className="mt-1 p-2 bg-[var(--color-surface)]/50 rounded text-[var(--color-text-secondary)] font-mono whitespace-pre-wrap break-words">
+                                {thinkingContent}
+                              </div>
+                            </details>
+                          )}
+                          {mainContent && (
+                            <Response className="text-xs font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                              {mainContent}
+                            </Response>
+                          )}
+                        </>
+                      );
+                    })()}
                     
                     {/* Show content for messages without parts (fallback) */}
                     {!message.parts && message.content && (
@@ -133,65 +157,7 @@ export function ChatInterface({ messages, isProcessing }: ChatInterfaceProps) {
                       </>
                     )}
                     
-                    {/* Show task progress for tool calls with dynamic metadata */}
-                    {message.role === "assistant" && message.parts && message.parts.some((p: any) => p.type?.startsWith('tool-')) && (
-                      <>
-                        {message.parts
-                          .filter((p: any) => p.type?.startsWith('tool-'))
-                          .map((part: any, i: number) => {
-                            // Extract task metadata from tool output if available
-                            const taskMeta = part.output?.taskMetadata;
-                            const toolName = part.type.replace('tool-', '');
-                            
-                            // Use metadata if available, otherwise fallback to defaults
-                            const title = taskMeta?.title || 
-                              (toolName === 'generate-music' || toolName === 'generateMusic' ? 'Music Generation' :
-                               toolName === 'analyzeAudio' ? 'Audio Analysis' :
-                               toolName === 'getProjectInfo' ? 'Project Info' : toolName);
-                            
-                            const status = part.state === 'output-available' ? 'completed' :
-                                         part.state === 'input-available' ? 'in-progress' : 'pending';
-                            
-                            return (
-                              <Task key={`task-${i}`} className="mb-2" defaultOpen={status === 'completed'}>
-                                <TaskTrigger 
-                                  title={title}
-                                  status={status}
-                                  count={taskMeta?.steps?.length}
-                                />
-                                <TaskContent>
-                                  {/* Show description if available */}
-                                  {taskMeta?.description && (
-                                    <div className="px-4 py-2 text-[10px] text-[var(--color-text-dim)]">
-                                      {taskMeta.description}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Show steps if available, otherwise show default */}
-                                  {taskMeta?.steps ? (
-                                    taskMeta.steps.map((step: string, idx: number) => (
-                                      <TaskItem 
-                                        key={idx}
-                                        status={status === 'completed' ? 'completed' : 
-                                               idx === 0 ? 'completed' :
-                                               idx === 1 ? 'in-progress' : 'pending'}
-                                      >
-                                        {step}
-                                      </TaskItem>
-                                    ))
-                                  ) : (
-                                    <TaskItem status={status}>
-                                      {part.input ? `Processing: ${JSON.stringify(part.input).substring(0, 50)}...` : 'Executing'}
-                                    </TaskItem>
-                                  )}
-                                </TaskContent>
-                              </Task>
-                            );
-                          })}
-                      </>
-                    )}
-
-                    {/* Always show tool calls if available */}
+                    {/* Show tool calls if available */}
                     {message.role === "assistant" && message.parts && (
                       <ToolCallDisplay message={message} />
                     )}

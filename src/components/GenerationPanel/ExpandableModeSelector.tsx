@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Repeat, Zap, Lightbulb } from 'lucide-react';
+import { Sparkles, Repeat, Zap, Lightbulb } from 'lucide-react';
 import { GenerationMode } from './ModeSelector';
 
 interface ExpandableModeSelectorProps {
@@ -13,6 +13,12 @@ export function ExpandableModeSelector({ mode, onModeChange }: ExpandableModeSel
   const containerRef = useRef<HTMLDivElement>(null);
   
   const modes = [
+    { 
+      id: 'default' as const,
+      label: 'Auto',
+      icon: Sparkles,
+      tooltip: 'AI chooses the best mode'
+    },
     { 
       id: 'loop' as const,
       label: 'Loop',
@@ -34,7 +40,7 @@ export function ExpandableModeSelector({ mode, onModeChange }: ExpandableModeSel
   ];
   
   const activeMode = modes.find(m => m.id === mode);
-  const ActiveIcon = activeMode?.icon || Repeat;
+  const ActiveIcon = activeMode?.icon || Sparkles;
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

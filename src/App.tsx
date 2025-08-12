@@ -12,13 +12,20 @@ import { ThemeSelector } from "./components/ThemeSelector";
 import { PonyAnimations } from "./components/PonyAnimations";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { useStore } from "./lib/store";
-import { Archive } from "lucide-react";
+import { Archive, RefreshCw, Zap } from "lucide-react";
 import { Generation } from "./types";
 import { StatusBar } from "./components/StatusBar";
 import { ProjectBar } from "./components/ProjectBar";
 import { TauriDropzone } from "./components/TauriDropzone";
 import tauriAPI from "./lib/tauri-api";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { useAbleton } from "./hooks/useAbleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const queryClient = new QueryClient();
 
@@ -46,9 +53,43 @@ function AppContent() {
   } = useStore();
   const { theme } = useTheme();
   const agentState = useAgent();
+  const { isConnected, isSyncing, syncWithAbleton } = useAbleton();
+  
+  const handleSync = async () => {
+    const success = await syncWithAbleton(true);
+    if (!success) {
+      toast.error("Failed to sync", {
+        description: "Could not connect to Ableton Live",
+      });
+    }
+  };
 
   useEffect(() => {
     console.log("App mounted");
+
+    // Prevent default drop behavior to avoid loading files into the browser
+    // But only for drops outside our dropzone
+    const preventDefault = (e: DragEvent) => {
+      // Only prevent if not in a dropzone area
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-dropzone]')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    
+    const preventDrop = (e: DragEvent) => {
+      // Always prevent drop to avoid loading files in browser
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-dropzone]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    };
+    
+    window.addEventListener('dragover', preventDefault);
+    window.addEventListener('drop', preventDrop);
 
     // Initialize store (load conversations from storage)
     initializeStore();
@@ -84,10 +125,14 @@ function AppContent() {
       };
     };
 
-    setupEventListeners().then((cleanup) => {
-      // Store cleanup function for later use
-      return cleanup;
-    });
+    const cleanupPromise = setupEventListeners();
+    
+    // Cleanup function
+    return () => {
+      window.removeEventListener('dragover', preventDefault);
+      window.removeEventListener('drop', preventDrop);
+      cleanupPromise.then(cleanup => cleanup());
+    };
 
     // Listen for audio generation events
     // TODO: Implement audio generation event listener with Tauri
@@ -180,6 +225,37 @@ function AppContent() {
                 SIDEKICK
               </h1>
               <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={handleSync}
+                      disabled={!isConnected || isSyncing}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all duration-200 ${
+                        isConnected
+                          ? isSyncing
+                            ? "bg-[var(--color-accent)]/50 text-[var(--color-accent)] cursor-wait"
+                            : "bg-[var(--color-surface)] hover:bg-[var(--color-accent)] hover:text-black text-[var(--color-accent)]"
+                          : "bg-[var(--color-surface)] text-[var(--color-text-dim)] cursor-not-allowed opacity-50"
+                      }`}
+                    >
+                      {isSyncing ? (
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Zap className="w-3 h-3" />
+                      )}
+                      <span className="text-[10px] font-medium">
+                        {isConnected ? "SYNC" : "OFFLINE"}
+                      </span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-[var(--color-surface)] border-[var(--color-text-dim)] text-[var(--color-text-primary)]">
+                    <p className="text-xs">
+                      {isConnected
+                        ? "Sync project settings with Ableton Live (auto-syncs every 5s)"
+                        : "Ableton Live is not detected. Make sure it's running."}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
                 <span className="w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" />
                 <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest">
                   Neural Audio Synthesis
@@ -216,12 +292,13 @@ function AppContent() {
           </div>
         </div>
         <Toaster 
-          position="bottom-right"
+          position="top-center"
           toastOptions={{
             style: {
               background: 'var(--color-surface)',
               border: '1px solid var(--color-text-dim)',
               color: 'var(--color-text-primary)',
+              marginTop: '40px',
             },
           }}
         />

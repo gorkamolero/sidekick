@@ -1,27 +1,30 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { Send } from "lucide-react";
 import { useStore } from "../lib/store";
-import { AudioDropZone } from "./AudioDropZone";
 import { GenerationMode } from "./GenerationPanel/ModeSelector";
 import { ExpandableModeSelector } from "./GenerationPanel/ExpandableModeSelector";
 import { PromptInput } from "./GenerationPanel/PromptInput";
-import { getModeInstructions } from "./GenerationPanel/modeInstructions";
-import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
-import tauriAPI from "../lib/tauri-api";
+import { Suggestions, Suggestion } from "./ai-elements/suggestion";
+import { tauriAPI } from "../lib/tauri-api";
 
 interface GenerationPanelProps {
-  sendMessage: (text: string, attachments?: any[]) => void;
+  sendMessage: (text: string, attachments?: any[], mode?: GenerationMode) => void;
   isProcessing: boolean;
   cancelMessage: () => void;
   messages?: any[];
 }
 
-export function GenerationPanel({ sendMessage, isProcessing, cancelMessage, messages = [] }: GenerationPanelProps) {
+export function GenerationPanel({
+  sendMessage,
+  isProcessing,
+  cancelMessage,
+  messages = [],
+}: GenerationPanelProps) {
   const [prompt, setPrompt] = useState("");
-  const [mode, setMode] = useState<GenerationMode>("loop");
+  const [mode, setMode] = useState<GenerationMode>("default");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
-  const { attachedFile, setAttachedFile } = useStore();
+  const { attachedFile, setAttachedFile, currentProject } = useStore();
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = async () => {
@@ -35,38 +38,37 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage, mess
     let attachments: any[] | undefined;
     if (attachedFile) {
       const filePath = (attachedFile as any).path || savedFilePath;
-      console.log('🎵 File path being sent:', filePath);
+      console.log("🎵 File path being sent:", filePath);
       if (filePath) {
         // Create an attachment object with the file info
-        attachments = [{
-          name: attachedFile.name,
-          url: filePath, // Use the file path as URL
-          contentType: attachedFile.type || 'audio/*',
-        }];
-        console.log('🎵 Attachments array:', attachments);
-        
+        attachments = [
+          {
+            name: attachedFile.name,
+            url: filePath, // Use the file path as URL
+            contentType: attachedFile.type || "audio/*",
+          },
+        ];
+        console.log("🎵 Attachments array:", attachments);
+
         // If no message provided, just set a default
         if (!message) {
           message = "Analyze this audio";
         }
       }
-      
+
       // Clear file immediately after capturing it
       setAttachedFile(null);
       setSavedFilePath(null);
     }
 
-    sendMessage(message, attachments);
+    sendMessage(message, attachments, mode);
   };
 
   const handleAudioFile = async (file: File) => {
     setIsAnalyzing(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const savedPath = await tauriAPI.saveAudioFile(
-        arrayBuffer,
-        file.name,
-      );
+      const savedPath = await tauriAPI.saveAudioFile(arrayBuffer, file.name);
 
       // Store the file and path for later use - NO automatic analysis
       setAttachedFile(file);
@@ -91,29 +93,29 @@ export function GenerationPanel({ sendMessage, isProcessing, cancelMessage, mess
         {/* Quick suggestions - only show when no messages in conversation */}
         {!prompt && !attachedFile && !isProcessing && messages.length === 0 && (
           <Suggestions className="mb-2">
-            <Suggestion 
-              suggestion="Generate dark techno loop" 
+            <Suggestion
+              suggestion="Generate dark techno loop"
               onClick={(text) => {
                 setPrompt(text);
                 setTimeout(() => inputRef.current?.focus(), 0);
               }}
             />
-            <Suggestion 
-              suggestion="Analyze this audio" 
+            <Suggestion
+              suggestion="Analyze this audio"
               onClick={(text) => {
                 setPrompt(text);
                 setTimeout(() => inputRef.current?.focus(), 0);
               }}
             />
-            <Suggestion 
-              suggestion="Create ambient pad" 
+            <Suggestion
+              suggestion="Create ambient pad"
               onClick={(text) => {
                 setPrompt(text);
                 setTimeout(() => inputRef.current?.focus(), 0);
               }}
             />
-            <Suggestion 
-              suggestion="Make it more energetic" 
+            <Suggestion
+              suggestion="Make it more energetic"
               onClick={(text) => {
                 setPrompt(text);
                 setTimeout(() => inputRef.current?.focus(), 0);

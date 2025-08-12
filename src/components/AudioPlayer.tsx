@@ -138,12 +138,15 @@ export function AudioPlayer({ audioUrl, localFilePath, prompt, duration, showCho
   const dragRef = useRef<HTMLDivElement>(null);
   
   const handleMouseDown = async (event: React.MouseEvent<HTMLDivElement>) => {
-    console.log('Mouse down triggered');
-    console.log('localFilePath:', localFilePath);
+    // Check if the click is on a button or inside a button
+    const target = event.target as HTMLElement;
+    const isButton = target.tagName === 'BUTTON' || 
+                    target.closest('button') !== null ||
+                    target.tagName === 'svg' ||
+                    target.closest('svg') !== null;
     
-    // Don't trigger on button clicks
-    if ((event.target as HTMLElement).tagName === 'BUTTON') {
-      console.log('Ignoring button click');
+    if (isButton) {
+      console.log('Ignoring button/icon click');
       return;
     }
     

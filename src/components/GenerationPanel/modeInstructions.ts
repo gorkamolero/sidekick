@@ -2,6 +2,15 @@ import { GenerationMode } from './ModeSelector';
 
 export function getModeInstructions(mode: GenerationMode, message: string): string {
   const instructions = {
+    default: `[SYSTEM: AUTO MODE ACTIVE]
+AI will automatically determine the best generation type based on your request.
+The system will analyze your prompt and choose between:
+- Loop: For seamless, repeatable patterns
+- Sample: For one-shots and hits
+- Inspiration: For full musical ideas
+
+User request: ${message}`,
+    
     loop: `[SYSTEM: LOOP MODE ACTIVE]
 Generate a 4-8 second seamless loop that can be repeated indefinitely.
 - Create consistent energy throughout

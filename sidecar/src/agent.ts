@@ -9,7 +9,7 @@ import { analyzeAudioStreaming } from './tools/analyzeAudioStreaming';
 import { abletonManual } from './tools/abletonManual';
 
 // Load environment variables
-dotenv.config({ path: '../.env', debug: false });
+dotenv.config({ path: '../.env', debug: true });
 
 // Create OpenRouter model
 const openrouter = createOpenRouter({
@@ -27,25 +27,23 @@ const generateMusic = createTool({
     prompt: z.string().describe('A detailed prompt describing the music you want to generate'),
     duration: z.number().optional().describe('Duration in seconds (defaults based on mode)'),
     mode: z.enum(['loop', 'sample', 'inspiration']).optional().describe('Generation mode: loop (4-8s), sample (1s), inspiration (15-30s)'),
-    model: z.string().optional().describe('Optional: specific model to use (e.g., stereo-large, v4.5)'),
-    inputAudio: z.string().optional().describe('Optional: URL or path to audio file for extension/continuation'),
-    lyrics: z.string().optional().describe('Optional: lyrics for the song (if service supports it)'),
-    makeInstrumental: z.boolean().optional().describe('Optional: create instrumental version'),
+    service: z.enum(['musicgen', 'suno']).optional().describe('Music generation service to use'),
   }),
   execute: async ({ context }) => {
-    const { prompt, duration, mode, model, inputAudio, lyrics, makeInstrumental } = context;
+    const { prompt, duration, mode, service } = context;
     console.log('🎵 MUSIC GENERATION TOOL EXECUTING!!!');
-    console.log('Parameters:', { prompt, duration, mode, model, inputAudio, lyrics, makeInstrumental });
+    console.log('Parameters:', { prompt, duration, mode, service });
     console.log('Agent provided duration:', duration);
-    
-    // Debug log to see if inputAudio is being passed
-    if (inputAudio) {
-      console.warn('⚠️ WARNING: inputAudio was provided:', inputAudio);
-      console.warn('This will extend/continue from previous audio!');
-    }
     
     try {
       const musicManager = getMusicGenerationManager();
+      
+      // Switch to requested service if provided
+      if (service && (service === 'musicgen' || service === 'suno')) {
+        musicManager.setActiveService(service);
+        console.log('🎵 Switched to service:', service);
+      }
+      
       const activeService = musicManager.getActiveService();
       console.log('🎵 Using service:', activeService);
       
@@ -53,10 +51,6 @@ const generateMusic = createTool({
         prompt,
         duration,
         mode,
-        model,
-        extendAudio: inputAudio,
-        lyrics,
-        makeInstrumental,
       });
       
       console.log('🎵 Generation SUCCESS!');
@@ -66,10 +60,7 @@ const generateMusic = createTool({
       // Download and save the audio file
       const localFilePath = await audioService.downloadAndSave(result.audioUrl, prompt);
       
-      // In sidecar, we broadcast via SSE instead of BrowserWindow
-      // This will be handled by the endpoint
-      
-      return {
+      const toolResult = {
         status: 'success',
         prompt,
         duration: result.duration,
@@ -80,7 +71,7 @@ const generateMusic = createTool({
         // Add task metadata for better UI display
         taskMetadata: {
           title: `Music Generation: ${mode || 'loop'}`,
-          description: `Creating ${duration || 8}s ${model ? `with ${model}` : 'audio'}`,
+          description: `Creating ${duration || 8}s audio`,
           steps: [
             'Initializing music service',
             'Processing prompt',
@@ -89,6 +80,9 @@ const generateMusic = createTool({
           ]
         }
       };
+      
+      console.log('🎵 Returning tool result:', toolResult);
+      return toolResult;
     } catch (error) {
       console.log('🎵 GENERATION FAILED!');
       console.error('Music generation error:', error);

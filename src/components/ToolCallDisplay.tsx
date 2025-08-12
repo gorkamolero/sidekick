@@ -20,6 +20,8 @@ export function ToolCallDisplay({
     part.type.startsWith('tool-')
   );
   
+  console.log('🔧 Tool parts found:', toolParts.length, toolParts);
+  
   if (toolParts.length === 0) return null;
 
   return (
@@ -52,6 +54,7 @@ export function ToolCallDisplay({
         };
 
         const renderOutput = () => {
+          console.log('🔧 Tool state:', toolPart.state, 'Has output:', !!toolPart.output);
           if (!toolPart.output) return null;
           const result = toolPart.output as any;
 

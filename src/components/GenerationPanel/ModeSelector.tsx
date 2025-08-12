@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Repeat, Zap, Lightbulb } from 'lucide-react';
+import { Sparkles, Repeat, Zap, Lightbulb } from 'lucide-react';
 
-export type GenerationMode = 'loop' | 'sample' | 'inspiration';
+export type GenerationMode = 'default' | 'loop' | 'sample' | 'inspiration';
 
 interface ModeSelectorProps {
   mode: GenerationMode;
@@ -12,6 +12,12 @@ export function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
   const [hoveredMode, setHoveredMode] = useState<GenerationMode | null>(null);
   
   const modes = [
+    { 
+      id: 'default' as const, 
+      label: 'Auto', 
+      icon: Sparkles,
+      description: 'AI chooses the best mode'
+    },
     { 
       id: 'loop' as const, 
       label: 'Loop', 

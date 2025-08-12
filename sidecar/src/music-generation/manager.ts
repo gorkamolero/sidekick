@@ -25,21 +25,19 @@ export function getMusicGenerationManager(): MusicGenerationManager {
     const musicGenAdapter = new MusicGenAdapter(musicGenConfig);
     managerInstance.registerService('musicgen', musicGenAdapter);
 
-    if (process.env.SUNO_API_KEY) {
-      const sunoConfig: SunoConfig = {
-        apiKey: process.env.SUNO_API_KEY,
-        baseUrl: process.env.SUNO_API_URL || 'https://api.sunoapi.org',
-        defaultModel: 'V4',
-        streamingEnabled: true,
-        pollingInterval: 2000,
-        maxPollingAttempts: 120
-      };
+    const sunoConfig: SunoConfig = {
+      apiKey: '656c27545ccf303dfdc5e5d82bb302c3',
+      baseUrl: 'https://api.sunoapi.org',
+      defaultModel: 'V4',
+      streamingEnabled: true,
+      pollingInterval: 2000,
+      maxPollingAttempts: 120
+    };
 
-      const sunoAdapter = new SunoAdapter(sunoConfig);
-      managerInstance.registerService('suno', sunoAdapter);
-      managerInstance.setActiveService('suno');
-      console.log('✅ Suno service registered and set as active');
-    }
+    const sunoAdapter = new SunoAdapter(sunoConfig);
+    managerInstance.registerService('suno', sunoAdapter);
+    managerInstance.setActiveService('suno');
+
   }
 
   return managerInstance;

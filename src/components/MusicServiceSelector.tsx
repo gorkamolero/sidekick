@@ -12,7 +12,7 @@ export const MusicServiceSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [services, setServices] = useState<MusicService[]>([
     { id: 'musicgen', name: 'MUSICGEN', available: true },
-    { id: 'suno', name: 'SUNO', available: false },
+    { id: 'suno', name: 'SUNO', available: true },
     { id: 'udio', name: 'UDIO', available: false },
   ]);
 
@@ -28,12 +28,10 @@ export const MusicServiceSelector: React.FC = () => {
   }, []);
 
   const checkServiceAvailability = async () => {
-    // Check if Suno API key exists
-    const hasSunoKey = !!process.env.SUNO_API_KEY || !!localStorage.getItem('suno_api_key');
-    
+    // For now, both MusicGen and Suno are available
     setServices(prev => prev.map(service => ({
       ...service,
-      available: service.id === 'musicgen' || (service.id === 'suno' && hasSunoKey)
+      available: service.id === 'musicgen' || service.id === 'suno'
     })));
   };
 
