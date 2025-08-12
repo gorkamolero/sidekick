@@ -2,7 +2,7 @@ export interface MusicGenerationParams {
   prompt: string;
   duration?: number;
   temperature?: number;
-  mode?: 'loop' | 'sample' | 'inspiration';
+  mode?: 'default' | 'loop' | 'sample' | 'inspiration';
   model?: string;
   lyrics?: string;
   extendAudio?: string;

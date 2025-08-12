@@ -53,11 +53,14 @@ export class SunoAdapter implements MusicGenerationService {
     
     const enhancedPrompt = this.enhancePromptForMode(params.prompt, params.mode);
     
+    // Determine instrumental setting based on mode
+    const instrumental = this.determineInstrumental(params);
+    
     const request: SunoGenerationRequest = {
       prompt: enhancedPrompt,
       model: this.mapModelVersion(model),
       customMode: !!params.lyrics,
-      instrumental: params.makeInstrumental || false,
+      instrumental: instrumental,
       lyrics: params.lyrics,
       callBackUrl: 'http://localhost:3001/api/suno/callback'
     };
@@ -227,7 +230,33 @@ export class SunoAdapter implements MusicGenerationService {
     throw new Error(`Generation timed out after ${maxAttempts * interval / 1000} seconds`);
   }
 
-  private getDurationForMode(mode?: 'loop' | 'sample' | 'inspiration', customDuration?: number): number {
+  private determineInstrumental(params: MusicGenerationParams): boolean {
+    // If explicitly set, use that
+    if (params.makeInstrumental !== undefined) {
+      return params.makeInstrumental;
+    }
+    
+    // For inspiration mode, let the agent/prompt decide
+    // The agent should infer or ask if vocals are needed
+    if (params.mode === 'inspiration') {
+      // Check if the prompt suggests instrumental
+      const promptLower = params.prompt.toLowerCase();
+      const instrumentalKeywords = ['instrumental', 'no vocals', 'no lyrics', 'drum loop', 'bass loop', 'beat', 'rhythm'];
+      const vocalKeywords = ['song', 'sing', 'vocal', 'lyrics', 'verse', 'chorus', 'rap'];
+      
+      const hasInstrumentalKeywords = instrumentalKeywords.some(keyword => promptLower.includes(keyword));
+      const hasVocalKeywords = vocalKeywords.some(keyword => promptLower.includes(keyword));
+      
+      // If clearly instrumental or unclear, default to instrumental
+      // Only use vocals if explicitly mentioned
+      return !hasVocalKeywords || hasInstrumentalKeywords;
+    }
+    
+    // For all other modes (default, loop, sample), default to instrumental
+    return true;
+  }
+
+  private getDurationForMode(mode?: 'default' | 'loop' | 'sample' | 'inspiration', customDuration?: number): number {
     if (customDuration !== undefined) return customDuration;
     
     switch (mode) {
@@ -237,6 +266,8 @@ export class SunoAdapter implements MusicGenerationService {
         return 15;
       case 'inspiration':
         return 30;
+      case 'default':
+        return 15; // Default to loop-like duration
       default:
         return 20;
     }
@@ -270,8 +301,9 @@ export class SunoAdapter implements MusicGenerationService {
     return mapping[model] || 'V4';
   }
 
-  private enhancePromptForMode(prompt: string, mode?: 'loop' | 'sample' | 'inspiration'): string {
+  private enhancePromptForMode(prompt: string, mode?: 'default' | 'loop' | 'sample' | 'inspiration'): string {
     const modeEnhancements: Record<string, string> = {
+      'default': '', // Let the AI decide based on the prompt
       'loop': 'Create a seamless loop that can be repeated indefinitely. No fade in or fade out, consistent energy throughout.',
       'sample': 'Create a single, impactful sound or hit. Focus on attack and transient.',
       'inspiration': 'Create a full musical idea with progression and variation. Allow for musical development and changes.'
