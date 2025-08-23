@@ -71,20 +71,24 @@ export class SunoAdapter implements MusicGenerationService {
       const result = await this.pollForCompletion(taskId);
       
       // Get the first track from response structure
-      const responseData = result.data?.response?.sunoData;
-      if (!responseData || responseData.length === 0) {
+      // The ACTUAL response structure is: data.response.sunoData[0]
+      const tracks = result.data?.response?.sunoData;
+      if (!tracks || tracks.length === 0) {
+        console.error('No tracks in response:', JSON.stringify(result.data, null, 2));
         throw new Error('No tracks received from Suno');
       }
       
-      const firstTrack = responseData[0];
+      const firstTrack = tracks[0];
+      // Use streamAudioUrl as audioUrl is often empty
       const audioUrl = firstTrack.streamAudioUrl || firstTrack.audioUrl;
       if (!audioUrl) {
+        console.error('No audio URL in track:', JSON.stringify(firstTrack, null, 2));
         throw new Error('No audio URL received from Suno');
       }
 
       return {
         audioUrl: audioUrl,
-        duration: result.data.duration || duration,
+        duration: firstTrack.duration || duration,
         format: 'mp3',
         metadata: {
           service: this.name,
@@ -201,9 +205,6 @@ export class SunoAdapter implements MusicGenerationService {
         if (data.code !== 200) {
           throw new Error(data.msg || 'Failed to get task status');
         }
-
-        console.log('🔍 Suno full response:', JSON.stringify(data, null, 2));
-        console.log('🔍 Suno status check:', data.data?.status);
 
         if (data.data?.status === 'SUCCESS' || data.data?.status === 'TEXT_SUCCESS') {
           return data;
